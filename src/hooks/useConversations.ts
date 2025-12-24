@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { logError } from '@/lib/logger';
+import { log } from '@/lib/logger';
 import type { Database } from '@/integrations/supabase/types';
 
 type Conversation = Database['public']['Tables']['conversations']['Row'];
@@ -21,65 +22,131 @@ interface ConversationWithDetails extends Conversation {
   } | null;
 }
 
-export const useConversations = () => {
+interface UseConversationsOptions {
+  page?: number;
+  pageSize?: number;
+  enabled?: boolean;
+}
+
+const DEFAULT_PAGE_SIZE = 50;
+
+export const useConversations = (options: UseConversationsOptions = {}) => {
   const { workspace } = useAuth();
   const { toast } = useToast();
-  const [conversations, setConversations] = useState<ConversationWithDetails[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  const { page = 1, pageSize = DEFAULT_PAGE_SIZE, enabled = true } = options;
 
-  const fetchConversations = async () => {
-    if (!workspace?.id) return;
+  // Query para buscar conversas com paginação
+  const {
+    data: conversationsData,
+    isLoading,
+    error: queryError,
+  } = useQuery({
+    queryKey: ['conversations', workspace?.id, page, pageSize],
+    queryFn: async () => {
+      if (!workspace?.id) return { conversations: [], total: 0 };
 
-    setIsLoading(true);
-    setError(null);
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize - 1;
 
-    const { data, error: fetchError } = await supabase
-      .from('conversations')
-      .select(`
-        *,
-        lead:leads!conversations_lead_id_fkey(id, name, phone, temperature, sentiment),
-        assigned_profile:profiles!conversations_assigned_to_fkey(full_name, avatar_url)
-      `)
-      .eq('workspace_id', workspace.id)
-      .order('updated_at', { ascending: false });
+      // Buscar total de conversas para calcular páginas
+      const { count: total } = await supabase
+        .from('conversations')
+        .select('*', { count: 'exact', head: true })
+        .eq('workspace_id', workspace.id);
 
-    if (fetchError) {
-      logError('Error fetching conversations', fetchError, 'useConversations');
-      setError(fetchError.message);
-    } else {
-      setConversations(data || []);
-    }
+      // Buscar conversas paginadas
+      const { data, error: fetchError } = await supabase
+        .from('conversations')
+        .select(`
+          *,
+          lead:leads!conversations_lead_id_fkey(id, name, phone, temperature, sentiment),
+          assigned_profile:profiles!conversations_assigned_to_fkey(full_name, avatar_url)
+        `)
+        .eq('workspace_id', workspace.id)
+        .order('updated_at', { ascending: false })
+        .range(from, to);
 
-    setIsLoading(false);
-  };
+      if (fetchError) {
+        log('ERROR', 'Error fetching conversations', { error: fetchError.message, workspaceId: workspace.id });
+        throw fetchError;
+      }
 
-  const updateConversationStatus = async (id: string, status: 'open' | 'closed' | 'pending') => {
-    const { error } = await supabase
-      .from('conversations')
-      .update({ 
-        status,
-        ended_at: status === 'closed' ? new Date().toISOString() : null 
-      })
-      .eq('id', id);
+      return {
+        conversations: data || [],
+        total: total || 0,
+        page,
+        pageSize,
+        totalPages: Math.ceil((total || 0) / pageSize),
+      };
+    },
+    enabled: enabled && !!workspace?.id,
+    staleTime: 30 * 1000, // 30 segundos
+    gcTime: 5 * 60 * 1000, // 5 minutos
+  });
 
-    if (error) {
+  // Query para buscar TODAS as conversas (para métricas) - com cache mais longo
+  const { data: allConversationsData } = useQuery({
+    queryKey: ['conversations-all', workspace?.id],
+    queryFn: async () => {
+      if (!workspace?.id) return [];
+
+      const { data, error: fetchError } = await supabase
+        .from('conversations')
+        .select(`
+          *,
+          lead:leads!conversations_lead_id_fkey(id, name, phone, temperature, sentiment),
+          assigned_profile:profiles!conversations_assigned_to_fkey(full_name, avatar_url)
+        `)
+        .eq('workspace_id', workspace.id)
+        .order('updated_at', { ascending: false });
+
+      if (fetchError) {
+        log('ERROR', 'Error fetching all conversations', { error: fetchError.message, workspaceId: workspace.id });
+        return [];
+      }
+
+      return data || [];
+    },
+    enabled: enabled && !!workspace?.id,
+    staleTime: 60 * 1000, // 1 minuto
+    gcTime: 10 * 60 * 1000, // 10 minutos
+  });
+
+  const conversations = conversationsData?.conversations || [];
+  const allConversations = allConversationsData || [];
+  const error = queryError ? (queryError as Error).message : null;
+
+  // Mutation para atualizar status
+  const updateConversationStatus = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: 'open' | 'closed' | 'pending' }) => {
+      const { error } = await supabase
+        .from('conversations')
+        .update({ 
+          status,
+          ended_at: status === 'closed' ? new Date().toISOString() : null 
+        })
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['conversations', workspace?.id] });
+      queryClient.invalidateQueries({ queryKey: ['conversations-all', workspace?.id] });
+    },
+    onError: (error: Error) => {
+      log('ERROR', 'Error updating conversation status', { error: error.message });
       toast({
         variant: 'destructive',
         title: 'Erro ao atualizar conversa',
         description: error.message,
       });
-      return { error };
-    }
+    },
+  });
 
-    await fetchConversations();
-    return { error: null };
-  };
-
+  // Subscribe to realtime updates
   useEffect(() => {
     if (!workspace?.id) return;
-
-    fetchConversations();
 
     const channel = supabase
       .channel('conversations-changes')
@@ -92,7 +159,9 @@ export const useConversations = () => {
           filter: `workspace_id=eq.${workspace.id}`,
         },
         () => {
-          fetchConversations();
+          // Invalidar queries quando houver mudanças
+          queryClient.invalidateQueries({ queryKey: ['conversations', workspace.id] });
+          queryClient.invalidateQueries({ queryKey: ['conversations-all', workspace.id] });
         }
       )
       .subscribe();
@@ -100,21 +169,30 @@ export const useConversations = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [workspace?.id]);
+  }, [workspace?.id, queryClient]);
 
+  // Computed metrics usando allConversations
   const metrics = {
-    total: conversations.length,
-    open: conversations.filter(c => c.status === 'open').length,
-    closed: conversations.filter(c => c.status === 'closed').length,
-    pending: conversations.filter(c => c.status === 'pending').length,
+    total: allConversations.length,
+    open: allConversations.filter(c => c.status === 'open').length,
+    closed: allConversations.filter(c => c.status === 'closed').length,
+    pending: allConversations.filter(c => c.status === 'pending').length,
   };
 
   return {
     conversations,
+    allConversations, // Para compatibilidade
     isLoading,
     error,
     metrics,
-    fetchConversations,
-    updateConversationStatus,
+    pagination: {
+      page: conversationsData?.page || 1,
+      pageSize: conversationsData?.pageSize || pageSize,
+      total: conversationsData?.total || 0,
+      totalPages: conversationsData?.totalPages || 0,
+    },
+    updateConversationStatus: (id: string, status: 'open' | 'closed' | 'pending') => 
+      updateConversationStatus.mutate({ id, status }),
+    refetch: () => queryClient.invalidateQueries({ queryKey: ['conversations', workspace?.id] }),
   };
 };

@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { logError } from '@/lib/logger';
+import { log } from '@/lib/logger';
 import type { Database } from '@/integrations/supabase/types';
 
 type Lead = Database['public']['Tables']['leads']['Row'];
@@ -16,32 +17,55 @@ interface LeadWithAssignee extends Lead {
   } | null;
 }
 
-export const useLeads = () => {
+interface UseLeadsOptions {
+  page?: number;
+  pageSize?: number;
+  enabled?: boolean;
+}
+
+const DEFAULT_PAGE_SIZE = 50;
+
+export const useLeads = (options: UseLeadsOptions = {}) => {
   const { workspace } = useAuth();
   const { toast } = useToast();
-  const [leads, setLeads] = useState<LeadWithAssignee[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  const { page = 1, pageSize = DEFAULT_PAGE_SIZE, enabled = true } = options;
 
-  const fetchLeads = async () => {
-    if (!workspace?.id) return;
+  // Query para buscar leads com paginação
+  const {
+    data: leadsData,
+    isLoading,
+    error: queryError,
+  } = useQuery({
+    queryKey: ['leads', workspace?.id, page, pageSize],
+    queryFn: async () => {
+      if (!workspace?.id) return { leads: [], total: 0 };
 
-    setIsLoading(true);
-    setError(null);
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize - 1;
 
-    const { data, error: fetchError } = await supabase
-      .from('leads')
-      .select(`
-        *,
-        assigned_profile:profiles(full_name, avatar_url)
-      `)
-      .eq('workspace_id', workspace.id)
-      .order('created_at', { ascending: false });
+      // Buscar total de leads para calcular páginas
+      const { count: total } = await supabase
+        .from('leads')
+        .select('*', { count: 'exact', head: true })
+        .eq('workspace_id', workspace.id);
 
-    if (fetchError) {
-      logError('Error fetching leads', fetchError, 'useLeads');
-      setError(fetchError.message);
-    } else {
+      // Buscar leads paginados
+      const { data, error: fetchError } = await supabase
+        .from('leads')
+        .select(`
+          *,
+          assigned_profile:profiles(full_name, avatar_url)
+        `)
+        .eq('workspace_id', workspace.id)
+        .order('created_at', { ascending: false })
+        .range(from, to);
+
+      if (fetchError) {
+        log('ERROR', 'Error fetching leads', { error: fetchError.message, workspaceId: workspace.id });
+        throw fetchError;
+      }
+
       // Transform data to match expected interface
       const transformedData: LeadWithAssignee[] = (data || []).map(lead => ({
         ...lead,
@@ -49,97 +73,157 @@ export const useLeads = () => {
           ? lead.assigned_profile[0] || null 
           : lead.assigned_profile || null
       }));
-      setLeads(transformedData);
-    }
 
-    setIsLoading(false);
-  };
+      return {
+        leads: transformedData,
+        total: total || 0,
+        page,
+        pageSize,
+        totalPages: Math.ceil((total || 0) / pageSize),
+      };
+    },
+    enabled: enabled && !!workspace?.id,
+    staleTime: 30 * 1000, // 30 segundos - dados considerados frescos
+    gcTime: 5 * 60 * 1000, // 5 minutos - cache mantido em memória
+  });
 
-  const createLead = async (lead: Omit<LeadInsert, 'workspace_id'>) => {
-    if (!workspace?.id) {
-      return { error: new Error('No workspace selected') };
-    }
+  // Query para buscar TODOS os leads (para métricas) - com cache mais longo
+  const { data: allLeadsData } = useQuery({
+    queryKey: ['leads-all', workspace?.id],
+    queryFn: async () => {
+      if (!workspace?.id) return [];
 
-    const { data, error } = await supabase
-      .from('leads')
-      .insert({
+      const { data, error: fetchError } = await supabase
+        .from('leads')
+        .select(`
+          *,
+          assigned_profile:profiles(full_name, avatar_url)
+        `)
+        .eq('workspace_id', workspace.id)
+        .order('created_at', { ascending: false });
+
+      if (fetchError) {
+        log('ERROR', 'Error fetching all leads', { error: fetchError.message, workspaceId: workspace.id });
+        return [];
+      }
+
+      const transformedData: LeadWithAssignee[] = (data || []).map(lead => ({
         ...lead,
-        workspace_id: workspace.id,
-      })
-      .select()
-      .single();
+        assigned_profile: Array.isArray(lead.assigned_profile) 
+          ? lead.assigned_profile[0] || null 
+          : lead.assigned_profile || null
+      }));
 
-    if (error) {
+      return transformedData;
+    },
+    enabled: enabled && !!workspace?.id,
+    staleTime: 60 * 1000, // 1 minuto - métricas podem ser menos atualizadas
+    gcTime: 10 * 60 * 1000, // 10 minutos
+  });
+
+  const leads = leadsData?.leads || [];
+  const allLeads = allLeadsData || [];
+  const error = queryError ? (queryError as Error).message : null;
+
+  // Mutations
+  const createLead = useMutation({
+    mutationFn: async (lead: Omit<LeadInsert, 'workspace_id'>) => {
+      if (!workspace?.id) {
+        throw new Error('No workspace selected');
+      }
+
+      const { data, error } = await supabase
+        .from('leads')
+        .insert({
+          ...lead,
+          workspace_id: workspace.id,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data, variables) => {
+      // Invalidar queries relacionadas
+      queryClient.invalidateQueries({ queryKey: ['leads', workspace?.id] });
+      queryClient.invalidateQueries({ queryKey: ['leads-all', workspace?.id] });
+      
+      toast({
+        title: 'Lead criado!',
+        description: `${variables.name} foi adicionado com sucesso.`,
+      });
+    },
+    onError: (error: Error) => {
+      log('ERROR', 'Error creating lead', { error: error.message });
       toast({
         variant: 'destructive',
         title: 'Erro ao criar lead',
         description: error.message,
       });
-      return { error };
-    }
+    },
+  });
 
-    toast({
-      title: 'Lead criado!',
-      description: `${lead.name} foi adicionado com sucesso.`,
-    });
+  const updateLead = useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: LeadUpdate }) => {
+      const { data, error } = await supabase
+        .from('leads')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
 
-    await fetchLeads();
-    return { data, error: null };
-  };
-
-  const updateLead = async (id: string, updates: LeadUpdate) => {
-    const { data, error } = await supabase
-      .from('leads')
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) {
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['leads', workspace?.id] });
+      queryClient.invalidateQueries({ queryKey: ['leads-all', workspace?.id] });
+      
+      toast({
+        title: 'Lead atualizado!',
+      });
+    },
+    onError: (error: Error) => {
+      log('ERROR', 'Error updating lead', { error: error.message });
       toast({
         variant: 'destructive',
         title: 'Erro ao atualizar lead',
         description: error.message,
       });
-      return { error };
-    }
+    },
+  });
 
-    toast({
-      title: 'Lead atualizado!',
-    });
+  const deleteLead = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('leads')
+        .delete()
+        .eq('id', id);
 
-    await fetchLeads();
-    return { data, error: null };
-  };
-
-  const deleteLead = async (id: string) => {
-    const { error } = await supabase
-      .from('leads')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['leads', workspace?.id] });
+      queryClient.invalidateQueries({ queryKey: ['leads-all', workspace?.id] });
+      
+      toast({
+        title: 'Lead removido!',
+      });
+    },
+    onError: (error: Error) => {
+      log('ERROR', 'Error deleting lead', { error: error.message });
       toast({
         variant: 'destructive',
         title: 'Erro ao deletar lead',
         description: error.message,
       });
-      return { error };
-    }
-
-    toast({
-      title: 'Lead removido!',
-    });
-
-    await fetchLeads();
-    return { error: null };
-  };
+    },
+  });
 
   // Subscribe to realtime updates
   useEffect(() => {
     if (!workspace?.id) return;
-
-    fetchLeads();
 
     const channel = supabase
       .channel('leads-changes')
@@ -152,7 +236,9 @@ export const useLeads = () => {
           filter: `workspace_id=eq.${workspace.id}`,
         },
         () => {
-          fetchLeads();
+          // Invalidar queries quando houver mudanças
+          queryClient.invalidateQueries({ queryKey: ['leads', workspace.id] });
+          queryClient.invalidateQueries({ queryKey: ['leads-all', workspace.id] });
         }
       )
       .subscribe();
@@ -160,31 +246,38 @@ export const useLeads = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [workspace?.id]);
+  }, [workspace?.id, queryClient]);
 
-  // Computed metrics
+  // Computed metrics usando allLeads (todos os leads)
   const metrics = {
-    total: leads.length,
-    hot: leads.filter(l => l.temperature === 'hot').length,
-    warm: leads.filter(l => l.temperature === 'warm').length,
-    cold: leads.filter(l => l.temperature === 'cold').length,
-    new: leads.filter(l => l.status === 'new').length,
-    inProgress: leads.filter(l => l.status === 'in_progress').length,
-    converted: leads.filter(l => l.status === 'converted').length,
-    lost: leads.filter(l => l.status === 'lost').length,
-    avgScore: leads.length > 0 
-      ? Math.round(leads.reduce((sum, l) => sum + l.score, 0) / leads.length)
+    total: allLeads.length,
+    hot: allLeads.filter(l => l.temperature === 'hot').length,
+    warm: allLeads.filter(l => l.temperature === 'warm').length,
+    cold: allLeads.filter(l => l.temperature === 'cold').length,
+    new: allLeads.filter(l => l.status === 'new').length,
+    inProgress: allLeads.filter(l => l.status === 'in_progress').length,
+    converted: allLeads.filter(l => l.status === 'converted').length,
+    lost: allLeads.filter(l => l.status === 'lost').length,
+    avgScore: allLeads.length > 0 
+      ? Math.round(allLeads.reduce((sum, l) => sum + l.score, 0) / allLeads.length)
       : 0,
   };
 
   return {
     leads,
+    allLeads, // Para compatibilidade com código que precisa de todos os leads
     isLoading,
     error,
     metrics,
-    fetchLeads,
-    createLead,
-    updateLead,
-    deleteLead,
+    pagination: {
+      page: leadsData?.page || 1,
+      pageSize: leadsData?.pageSize || pageSize,
+      total: leadsData?.total || 0,
+      totalPages: leadsData?.totalPages || 0,
+    },
+    createLead: createLead.mutate,
+    updateLead: (id: string, updates: LeadUpdate) => updateLead.mutate({ id, updates }),
+    deleteLead: deleteLead.mutate,
+    refetch: () => queryClient.invalidateQueries({ queryKey: ['leads', workspace?.id] }),
   };
 };

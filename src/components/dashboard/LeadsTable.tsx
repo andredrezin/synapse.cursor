@@ -12,7 +12,7 @@ import {
 } from "@/lib/mock-data";
 
 const LeadsTable = () => {
-  const { leads, isLoading } = useLeads();
+  const { allLeads, isLoading } = useLeads();
   const navigate = useNavigate();
 
   if (isLoading) {
@@ -58,14 +58,14 @@ const LeadsTable = () => {
             </tr>
           </thead>
           <tbody>
-            {leads.length === 0 ? (
+            {allLeads.length === 0 ? (
               <tr>
                 <td colSpan={7} className="px-5 py-10 text-center text-muted-foreground">
                   Nenhum lead encontrado. Os leads aparecerão aqui quando você receber mensagens.
                 </td>
               </tr>
             ) : (
-              leads.slice(0, 6).map((lead) => (
+              allLeads.slice(0, 6).map((lead) => (
                 <tr 
                   key={lead.id} 
                   className="border-b border-border/50 hover:bg-secondary/30 transition-colors cursor-pointer"
@@ -130,7 +130,7 @@ const LeadsTable = () => {
       </div>
 
       <div className="p-4 border-t border-border flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">Mostrando {Math.min(leads.length, 6)} de {leads.length} leads</p>
+        <p className="text-sm text-muted-foreground">Mostrando {Math.min(allLeads.length, 6)} de {allLeads.length} leads</p>
         <Button variant="outline" size="sm" onClick={() => navigate('/dashboard/leads')}>
           Ver Todos
         </Button>

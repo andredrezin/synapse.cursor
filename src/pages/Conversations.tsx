@@ -16,6 +16,8 @@ import {
   Minus,
   ExternalLink,
   MessageCircle,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { useConversations } from '@/hooks/useConversations';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -23,10 +25,20 @@ import { formatDistanceToNow } from 'date-fns';
 import { ptBR, enUS, es } from 'date-fns/locale';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 const Conversations = () => {
   const navigate = useNavigate();
-  const { conversations, metrics, isLoading } = useConversations();
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 50;
+  const { conversations, metrics, isLoading, pagination } = useConversations({ page: currentPage, pageSize });
   const { isAdmin } = usePermissions();
   const [searchQuery, setSearchQuery] = useState('');
   const { t, i18n } = useTranslation();
@@ -248,6 +260,71 @@ const Conversations = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Paginação */}
+        {pagination.totalPages > 1 && (
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <Button
+                  variant="ghost"
+                  size="default"
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  className="gap-1"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  <span>Anterior</span>
+                </Button>
+              </PaginationItem>
+              
+              {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                let pageNum: number;
+                if (pagination.totalPages <= 5) {
+                  pageNum = i + 1;
+                } else if (currentPage <= 3) {
+                  pageNum = i + 1;
+                } else if (currentPage >= pagination.totalPages - 2) {
+                  pageNum = pagination.totalPages - 4 + i;
+                } else {
+                  pageNum = currentPage - 2 + i;
+                }
+                
+                return (
+                  <PaginationItem key={pageNum}>
+                    <Button
+                      variant={currentPage === pageNum ? "outline" : "ghost"}
+                      size="icon"
+                      onClick={() => setCurrentPage(pageNum)}
+                    >
+                      {pageNum}
+                    </Button>
+                  </PaginationItem>
+                );
+              })}
+              
+              <PaginationItem>
+                <Button
+                  variant="ghost"
+                  size="default"
+                  onClick={() => setCurrentPage(prev => Math.min(pagination.totalPages, prev + 1))}
+                  disabled={currentPage === pagination.totalPages}
+                  className="gap-1"
+                >
+                  <span>Próximo</span>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        )}
+
+        {/* Info de paginação */}
+        {pagination.total > 0 && (
+          <div className="text-sm text-muted-foreground text-center">
+            Mostrando {((currentPage - 1) * pageSize) + 1} - {Math.min(currentPage * pageSize, pagination.total)} de {pagination.total} conversas
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );

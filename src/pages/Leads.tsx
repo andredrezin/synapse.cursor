@@ -11,7 +11,9 @@ import {
   MoreHorizontal,
   ExternalLink,
   Plus,
-  Trash2
+  Trash2,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { useLeads } from '@/hooks/useLeads';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -42,9 +44,20 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+  PaginationEllipsis,
+} from "@/components/ui/pagination";
 
 const Leads = () => {
-  const { leads, metrics, isLoading, deleteLead } = useLeads();
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 50;
+  const { leads, metrics, isLoading, deleteLead, pagination } = useLeads({ page: currentPage, pageSize });
   const { isAdmin, canDeleteLeads, canExportData } = usePermissions();
   const [searchQuery, setSearchQuery] = useState('');
   const [temperatureFilter, setTemperatureFilter] = useState<string>('all');
@@ -335,6 +348,71 @@ const Leads = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Paginação */}
+        {pagination.totalPages > 1 && (
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <Button
+                  variant="ghost"
+                  size="default"
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  className="gap-1"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  <span>Anterior</span>
+                </Button>
+              </PaginationItem>
+              
+              {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                let pageNum: number;
+                if (pagination.totalPages <= 5) {
+                  pageNum = i + 1;
+                } else if (currentPage <= 3) {
+                  pageNum = i + 1;
+                } else if (currentPage >= pagination.totalPages - 2) {
+                  pageNum = pagination.totalPages - 4 + i;
+                } else {
+                  pageNum = currentPage - 2 + i;
+                }
+                
+                return (
+                  <PaginationItem key={pageNum}>
+                    <Button
+                      variant={currentPage === pageNum ? "outline" : "ghost"}
+                      size="icon"
+                      onClick={() => setCurrentPage(pageNum)}
+                    >
+                      {pageNum}
+                    </Button>
+                  </PaginationItem>
+                );
+              })}
+              
+              <PaginationItem>
+                <Button
+                  variant="ghost"
+                  size="default"
+                  onClick={() => setCurrentPage(prev => Math.min(pagination.totalPages, prev + 1))}
+                  disabled={currentPage === pagination.totalPages}
+                  className="gap-1"
+                >
+                  <span>Próximo</span>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        )}
+
+        {/* Info de paginação */}
+        {pagination.total > 0 && (
+          <div className="text-sm text-muted-foreground text-center">
+            Mostrando {((currentPage - 1) * pageSize) + 1} - {Math.min(currentPage * pageSize, pagination.total)} de {pagination.total} leads
+          </div>
+        )}
       </div>
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

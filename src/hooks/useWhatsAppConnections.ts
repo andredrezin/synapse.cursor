@@ -47,6 +47,8 @@ export function useWhatsAppConnections() {
       return data as WhatsAppConnection[];
     },
     enabled: !!workspace?.id,
+    staleTime: 30 * 1000, // 30 segundos - dados considerados frescos
+    gcTime: 5 * 60 * 1000, // 5 minutos - cache mantido em memória
   });
 
   // Check OAuth connection status
@@ -160,44 +162,8 @@ export function useWhatsAppConnections() {
     };
   }, [workspace?.id, queryClient, stopOAuthPolling]);
 
-  // Poll status for connections that are connecting or qr_pending
-  useEffect(() => {
-    if (!connections || connections.length === 0) return;
-
-    const pendingConnections = connections.filter(
-      c => c.status === 'connecting' || c.status === 'qr_pending'
-    );
-
-    if (pendingConnections.length === 0) return;
-
-    const pollInterval = setInterval(async () => {
-      for (const conn of pendingConnections) {
-        try {
-          const { data, error } = await supabase.functions.invoke('whatsapp-status', {
-            body: {
-              connection_id: conn.id,
-              action: 'check_status',
-            },
-          });
-
-          if (!error && data?.status && data.status !== conn.status) {
-            queryClient.invalidateQueries({ queryKey: ['whatsapp-connections', workspace?.id] });
-            
-            if (data.status === 'connected') {
-              toast({
-                title: 'WhatsApp Conectado!',
-                description: `A conexão "${conn.name}" foi estabelecida com sucesso.`,
-              });
-            }
-          }
-        } catch (err) {
-          logError('Error polling connection status', err instanceof Error ? err : new Error(String(err)), 'useWhatsAppConnections');
-        }
-      }
-    }, 5000); // Poll every 5 seconds
-
-    return () => clearInterval(pollInterval);
-  }, [connections, queryClient, workspace?.id, toast]);
+  // Removido polling desnecessário - realtime subscription já cobre atualizações de status
+  // O polling só é necessário durante OAuth flow, que já está implementado em startOAuthPolling
 
   const createConnection = useMutation({
     mutationFn: async (params: CreateConnectionParams) => {

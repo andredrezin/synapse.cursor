@@ -23,11 +23,11 @@ import { useNavigate } from 'react-router-dom';
 const SellerDashboard = () => {
   const { profile } = useAuth();
   const { metrics, isLoading } = useDashboardMetrics();
-  const { leads, isLoading: leadsLoading } = useLeads();
+  const { allLeads, isLoading: leadsLoading } = useLeads();
   const navigate = useNavigate();
 
   // Filter leads assigned to this seller
-  const myLeads = leads.filter(lead => lead.assigned_to === profile?.id);
+  const myLeads = allLeads.filter(lead => lead.assigned_to === profile?.id);
   const hotLeads = myLeads.filter(lead => lead.temperature === 'hot');
   const convertedLeads = myLeads.filter(lead => lead.status === 'converted');
   const inProgressLeads = myLeads.filter(lead => lead.status === 'in_progress');
