@@ -245,6 +245,29 @@ serve(async (req) => {
       );
     }
 
+    // Verify user has access to this connection's workspace
+    const { data: member, error: memberError } = await supabaseAdmin
+      .from("workspace_members")
+      .select("role")
+      .eq("workspace_id", connection.workspace_id)
+      .eq("user_id", user.id)
+      .single();
+
+    if (memberError || !member) {
+      log("ERROR", `[${requestId}] Workspace access denied`, {
+        userId: user.id,
+        workspace_id: connection.workspace_id,
+        connection_id,
+        error: memberError?.message,
+      });
+      return new Response(
+        JSON.stringify({ success: false, error: "Acesso negado a este workspace" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    log("DEBUG", `[${requestId}] Workspace access verified`, { role: member.role });
+
     log("DEBUG", `[${requestId}] Connection found`, { 
       connectionId: connection.id,
       provider: connection.provider,

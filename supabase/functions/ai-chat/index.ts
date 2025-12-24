@@ -249,8 +249,53 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseKey);
     
+    // Get user from auth header if available (for permission checks)
+    const authHeader = req.headers.get('Authorization');
+    let userId: string | null = null;
+    
+    if (authHeader) {
+      try {
+        const supabaseClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!, {
+          global: { headers: { Authorization: authHeader } },
+        });
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        userId = user?.id || null;
+      } catch (error) {
+        log('WARN', `[${requestId}] Could not get user from auth header`, { error: String(error) });
+      }
+    }
+    
     // Rate limiting: 30 requests per minute per workspace
     const body: ChatRequest = await req.json();
+    
+    // Validate workspace access if user is authenticated
+    if (userId) {
+      const { data: member, error: memberError } = await supabase
+        .from('workspace_members')
+        .select('role')
+        .eq('workspace_id', body.workspace_id)
+        .eq('user_id', userId)
+        .single();
+
+      if (memberError || !member) {
+        log('WARN', `[${requestId}] Workspace access denied`, {
+          userId,
+          workspace_id: body.workspace_id,
+          error: memberError?.message,
+        });
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'Acesso negado a este workspace',
+          }),
+          {
+            status: 403,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
+    }
+    
     const rateLimitIdentifier = `workspace:${body.workspace_id}`;
     const rateLimitResult = await checkRateLimit(supabase, rateLimitIdentifier, 'ai-chat', 30, 60 * 1000);
     
