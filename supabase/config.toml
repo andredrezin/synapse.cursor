@@ -1,0 +1,67 @@
+project_id = "bhaaunojqtxbfkrpgdix"
+
+[functions.create-workspace]
+verify_jwt = false
+
+[functions.whatsapp-connect]
+verify_jwt = false
+
+[functions.whatsapp-webhook]
+verify_jwt = false
+
+[functions.whatsapp-send]
+verify_jwt = false
+
+[functions.whatsapp-status]
+verify_jwt = false
+
+[functions.whatsapp-oauth-callback]
+verify_jwt = false
+
+[functions.ai-router]
+verify_jwt = false
+
+[functions.ai-chat]
+verify_jwt = false
+
+[functions.ai-analyze]
+verify_jwt = false
+
+[functions.ai-suggest]
+verify_jwt = false
+
+[functions.ai-qualify]
+verify_jwt = false
+
+[functions.ai-learn]
+verify_jwt = false
+
+[functions.transcribe-audio]
+verify_jwt = false
+
+[functions.analyze-image]
+verify_jwt = false
+
+[functions.create-checkout]
+verify_jwt = false
+
+[functions.check-subscription]
+verify_jwt = false
+
+[functions.customer-portal]
+verify_jwt = false
+
+[functions.stripe-webhook]
+verify_jwt = false
+
+[functions.send-subscription-email]
+verify_jwt = false
+
+[functions.apply-retention-coupon]
+verify_jwt = false
+
+[functions.ai-guide]
+verify_jwt = false
+
+[functions.whatsapp-health-check]
+verify_jwt = false
