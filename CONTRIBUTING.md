@@ -298,3 +298,4 @@ Obrigado por contribuir com o SynapseWhats! Cada contribuição torna o projeto 
 
 **Lembre-se**: Contribuir é sobre aprender, compartilhar e construir juntos! 🚀
 
+

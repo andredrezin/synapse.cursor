@@ -199,3 +199,4 @@ A casa (Supabase) já está pronta e funcionando. Estamos melhorando como organi
 
 **Resumo Final**: Estamos melhorando **NOSSO CÓDIGO** que usa Supabase, não alterando o Supabase em si! 🚀
 
+

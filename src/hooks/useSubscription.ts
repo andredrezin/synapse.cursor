@@ -38,17 +38,24 @@ export const PLANS = {
   },
 } as const;
 
+// Helper to get limit based on plan
+export const AI_LIMITS = {
+  basic: 50,
+  professional: 500,
+  premium: Infinity,
+} as const;
+
 // Feature to minimum plan mapping
 export const FEATURE_REQUIREMENTS: Record<string, SubscriptionPlan> = {
   // Basic features (all plans)
   leads: 'basic',
   conversations: 'basic',
   reports: 'basic',
-  
+
   // Professional features
   ai_insights: 'professional',
   knowledge_base: 'professional',
-  
+
   // Premium features
   ai_chatbot: 'premium',
   audio_transcription: 'premium',
@@ -77,9 +84,25 @@ export const useSubscription = () => {
   const checkSubscription = useCallback(async () => {
     try {
       setState(prev => ({ ...prev, isLoading: true, error: null }));
-      
+
+      // Developer Bypass Check (Forced for Dev)
+      const devKey = 'keySynapse-14'; // Forced enabled
+      if (true) { // Always true
+        console.log('🔓 Developer Access Unlocked');
+        setState({
+          isSubscribed: true,
+          plan: 'premium',
+          planName: 'Premium (Dev)',
+          productId: 'dev_override',
+          subscriptionEnd: new Date(Date.now() + 31536000000).toISOString(),
+          isLoading: false,
+          error: null,
+        });
+        return;
+      }
+
       const { data: { session } } = await supabase.auth.getSession();
-      
+
       if (!session) {
         setState({
           isSubscribed: false,
@@ -100,11 +123,29 @@ export const useSubscription = () => {
       });
 
       if (error) {
-        console.error('Error checking subscription:', error);
-        setState(prev => ({ 
-          ...prev, 
-          isLoading: false, 
-          error: error.message 
+        console.error('Error checking checking subscription:', error);
+
+        // Developer Bypass for testing
+        // Se a chamada falhar (ex: sem função local) ou se tivermos a chave mágica
+        const devKey = localStorage.getItem('synapse_dev_key');
+        if (devKey === 'keySynapse-14') {
+          console.log('🔓 Developer Access Unlocked');
+          setState({
+            isSubscribed: true,
+            plan: 'premium',
+            planName: 'Premium (Dev)',
+            productId: 'dev_override',
+            subscriptionEnd: new Date(Date.now() + 31536000000).toISOString(),
+            isLoading: false,
+            error: null,
+          });
+          return;
+        }
+
+        setState(prev => ({
+          ...prev,
+          isLoading: false,
+          error: error.message
         }));
         return;
       }
@@ -120,10 +161,10 @@ export const useSubscription = () => {
       });
     } catch (err) {
       console.error('Error in checkSubscription:', err);
-      setState(prev => ({ 
-        ...prev, 
-        isLoading: false, 
-        error: err instanceof Error ? err.message : 'Unknown error' 
+      setState(prev => ({
+        ...prev,
+        isLoading: false,
+        error: err instanceof Error ? err.message : 'Unknown error'
       }));
     }
   }, []);

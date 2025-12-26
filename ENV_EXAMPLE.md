@@ -117,3 +117,4 @@ console.log("API Key configured:", !!apiKey);
 - [Configuração de Edge Functions](https://supabase.com/docs/guides/functions/secrets)
 - [Variáveis de Ambiente no Vite](https://vitejs.dev/guide/env-and-mode.html)
 
+

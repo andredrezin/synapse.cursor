@@ -1,4 +1,5 @@
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
+import { MetricsErrorBoundary } from "@/components/dashboard/MetricsErrorBoundary";
 import MetricCard from "@/components/dashboard/MetricCard";
 import ConversionChart from "@/components/dashboard/ConversionChart";
 import LeadsTable from "@/components/dashboard/LeadsTable";
@@ -10,11 +11,11 @@ import { useDashboardMetrics } from "@/hooks/useDashboardMetrics";
 import { usePermissions } from "@/hooks/usePermissions";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTranslation } from "react-i18next";
-import { 
-  TrendingUp, 
-  Users, 
-  MessageCircle, 
-  Clock, 
+import {
+  TrendingUp,
+  Users,
+  MessageCircle,
+  Clock,
   Target,
   DollarSign
 } from "lucide-react";
@@ -58,8 +59,8 @@ const Dashboard = () => {
           {isAdmin ? t('dashboard.title') : t('dashboard.myDashboard')}
         </h1>
         <p className="text-muted-foreground">
-          {isAdmin 
-            ? t('dashboard.overview') 
+          {isAdmin
+            ? t('dashboard.overview')
             : `${t('dashboard.yourSalesData')} • ${currentRole}`
           }
         </p>
@@ -70,7 +71,7 @@ const Dashboard = () => {
         <MetricCard
           title={t('dashboard.conversionRate')}
           value={`${metrics.conversionRate}%`}
-          change={{ value: `+12% ${t('dashboard.vsWeek')}`, trend: 'up' }}
+          change={undefined}
           icon={TrendingUp}
         />
         <MetricCard
@@ -84,7 +85,7 @@ const Dashboard = () => {
         <MetricCard
           title={isAdmin ? t('dashboard.conversationsToday') : t('dashboard.myConversations')}
           value={metrics.conversationsToday.toString()}
-          change={{ value: `+${metrics.conversationsChange}% ${t('dashboard.vsYesterday')}`, trend: 'up' }}
+          change={{ value: `${metrics.conversationsChange > 0 ? '+' : ''}${metrics.conversationsChange}% ${t('dashboard.vsYesterday')}`, trend: metrics.conversationsChange >= 0 ? 'up' : 'down' }}
           icon={MessageCircle}
           iconColor="text-chart-purple"
           iconBg="bg-chart-purple/10"
@@ -92,7 +93,6 @@ const Dashboard = () => {
         <MetricCard
           title={t('dashboard.responseTime')}
           value={`${metrics.avgResponseTime}min`}
-          change={{ value: `-45s ${t('dashboard.vsMeta')}`, trend: 'up' }}
           icon={Clock}
           iconColor="text-chart-orange"
           iconBg="bg-chart-orange/10"
@@ -117,21 +117,38 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
         {/* Charts - Takes 2 columns */}
         <div className="xl:col-span-2 space-y-6">
-          <ConversionChart />
-          <LeadsTable />
+          <MetricsErrorBoundary name="ConversionChart">
+            <ConversionChart />
+          </MetricsErrorBoundary>
+
+          <MetricsErrorBoundary name="LeadsTable">
+            <LeadsTable />
+          </MetricsErrorBoundary>
         </div>
 
         {/* Sidebar - Takes 1 column */}
         <div className="space-y-6">
-          <AlertsPanel />
-          <AIInsights />
+          <MetricsErrorBoundary name="AlertsPanel">
+            <AlertsPanel />
+          </MetricsErrorBoundary>
+
+          <MetricsErrorBoundary name="AIInsights">
+            <AIInsights />
+          </MetricsErrorBoundary>
         </div>
       </div>
 
       {/* Bottom Row - Only show team performance for admins */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {isAdmin && <TeamPerformance />}
-        <SourcesChart />
+        {isAdmin && (
+          <MetricsErrorBoundary name="TeamPerformance">
+            <TeamPerformance />
+          </MetricsErrorBoundary>
+        )}
+
+        <MetricsErrorBoundary name="SourcesChart">
+          <SourcesChart />
+        </MetricsErrorBoundary>
       </div>
     </DashboardLayout>
   );

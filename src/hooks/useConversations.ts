@@ -31,10 +31,12 @@ interface UseConversationsOptions {
 const DEFAULT_PAGE_SIZE = 50;
 
 export const useConversations = (options: UseConversationsOptions = {}) => {
-  const { workspace } = useAuth();
+  const { workspace, profile, workspaceRole } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { page = 1, pageSize = DEFAULT_PAGE_SIZE, enabled = true } = options;
+
+  const isSeller = workspaceRole === 'seller' || workspaceRole === 'member';
 
   // Query para buscar conversas com paginação
   const {
@@ -50,20 +52,32 @@ export const useConversations = (options: UseConversationsOptions = {}) => {
       const to = from + pageSize - 1;
 
       // Buscar total de conversas para calcular páginas
-      const { count: total } = await supabase
+      let countQuery = supabase
         .from('conversations')
         .select('*', { count: 'exact', head: true })
         .eq('workspace_id', workspace.id);
 
+      if (isSeller && profile?.id) {
+        countQuery = countQuery.eq('assigned_to', profile.id);
+      }
+
+      const { count: total } = await countQuery;
+
       // Buscar conversas paginadas
-      const { data, error: fetchError } = await supabase
+      let query = supabase
         .from('conversations')
         .select(`
           *,
           lead:leads!conversations_lead_id_fkey(id, name, phone, temperature, sentiment),
           assigned_profile:profiles!conversations_assigned_to_fkey(full_name, avatar_url)
         `)
-        .eq('workspace_id', workspace.id)
+        .eq('workspace_id', workspace.id);
+
+      if (isSeller && profile?.id) {
+        query = query.eq('assigned_to', profile.id);
+      }
+
+      const { data, error: fetchError } = await query
         .order('updated_at', { ascending: false })
         .range(from, to);
 
@@ -91,15 +105,20 @@ export const useConversations = (options: UseConversationsOptions = {}) => {
     queryFn: async () => {
       if (!workspace?.id) return [];
 
-      const { data, error: fetchError } = await supabase
+      let query = supabase
         .from('conversations')
         .select(`
           *,
           lead:leads!conversations_lead_id_fkey(id, name, phone, temperature, sentiment),
           assigned_profile:profiles!conversations_assigned_to_fkey(full_name, avatar_url)
         `)
-        .eq('workspace_id', workspace.id)
-        .order('updated_at', { ascending: false });
+        .eq('workspace_id', workspace.id);
+
+      if (isSeller && profile?.id) {
+        query = query.eq('assigned_to', profile.id);
+      }
+
+      const { data, error: fetchError } = await query.order('updated_at', { ascending: false });
 
       if (fetchError) {
         log('ERROR', 'Error fetching all conversations', { error: fetchError.message, workspaceId: workspace.id });
@@ -122,9 +141,9 @@ export const useConversations = (options: UseConversationsOptions = {}) => {
     mutationFn: async ({ id, status }: { id: string; status: 'open' | 'closed' | 'pending' }) => {
       const { error } = await supabase
         .from('conversations')
-        .update({ 
+        .update({
           status,
-          ended_at: status === 'closed' ? new Date().toISOString() : null 
+          ended_at: status === 'closed' ? new Date().toISOString() : null
         })
         .eq('id', id);
 
@@ -139,6 +158,50 @@ export const useConversations = (options: UseConversationsOptions = {}) => {
       toast({
         variant: 'destructive',
         title: 'Erro ao atualizar conversa',
+        description: error.message,
+      });
+    },
+  });
+
+  const createConversation = useMutation({
+    mutationFn: async (leadId: string) => {
+      if (!workspace?.id) throw new Error('No workspace selected');
+
+      // Check for existing conversation (active or recent)
+      const { data: existing } = await supabase
+        .from('conversations')
+        .select('id')
+        .eq('lead_id', leadId)
+        .eq('workspace_id', workspace.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (existing) return existing;
+
+      // Create new conversation
+      const { data: newConv, error } = await supabase
+        .from('conversations')
+        .insert({
+          workspace_id: workspace.id,
+          lead_id: leadId,
+          status: 'open'
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return newConv;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['conversations', workspace?.id] });
+      queryClient.invalidateQueries({ queryKey: ['conversations-all', workspace?.id] });
+    },
+    onError: (error: Error) => {
+      log('ERROR', 'Error creating conversation', { error: error.message });
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao iniciar conversa',
         description: error.message,
       });
     },
@@ -191,8 +254,9 @@ export const useConversations = (options: UseConversationsOptions = {}) => {
       total: conversationsData?.total || 0,
       totalPages: conversationsData?.totalPages || 0,
     },
-    updateConversationStatus: (id: string, status: 'open' | 'closed' | 'pending') => 
+    updateConversationStatus: (id: string, status: 'open' | 'closed' | 'pending') =>
       updateConversationStatus.mutate({ id, status }),
+    createConversation: createConversation.mutateAsync,
     refetch: () => queryClient.invalidateQueries({ queryKey: ['conversations', workspace?.id] }),
   };
 };

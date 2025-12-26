@@ -230,3 +230,4 @@ R: Depende do seu objetivo. Lovable para rapidez, Git local para controle.
 **P: Preciso fazer push toda vez?**
 R: Não! Push é opcional. Commits locais já salvam o histórico.
 
+

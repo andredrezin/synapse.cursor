@@ -65,14 +65,14 @@ class Logger {
 
   debug(message: string, data?: any, context?: string): void {
     if (!this.shouldLog('debug')) return;
-    
+
     const entry = this.formatMessage('debug', message, data, context);
     this.logToConsole(entry);
   }
 
   info(message: string, data?: any, context?: string): void {
     if (!this.shouldLog('info')) return;
-    
+
     const entry = this.formatMessage('info', message, data, context);
     this.logToConsole(entry);
   }
@@ -80,7 +80,7 @@ class Logger {
   warn(message: string, data?: any, context?: string): void {
     const entry = this.formatMessage('warn', message, data, context);
     this.logToConsole(entry);
-    
+
     // In production, warnings might also be sent to monitoring
     if (this.isProduction) {
       // TODO: Send to monitoring service
@@ -88,12 +88,12 @@ class Logger {
   }
 
   error(message: string, error?: Error | any, context?: string): void {
-    const errorData = error instanceof Error 
-      ? { 
-          message: error.message, 
-          stack: error.stack,
-          name: error.name 
-        }
+    const errorData = error instanceof Error
+      ? {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      }
       : error;
 
     const entry = this.formatMessage('error', message, errorData, context);
@@ -105,15 +105,34 @@ class Logger {
 export const logger = new Logger();
 
 // Export convenience functions
-export const logDebug = (message: string, data?: any, context?: string) => 
+export const logDebug = (message: string, data?: any, context?: string) =>
   logger.debug(message, data, context);
 
-export const logInfo = (message: string, data?: any, context?: string) => 
+export const logInfo = (message: string, data?: any, context?: string) =>
   logger.info(message, data, context);
 
-export const logWarn = (message: string, data?: any, context?: string) => 
+export const logWarn = (message: string, data?: any, context?: string) =>
   logger.warn(message, data, context);
 
-export const logError = (message: string, error?: Error | any, context?: string) => 
+export const logError = (message: string, error?: Error | any, context?: string) =>
   logger.error(message, error, context);
+
+export const log = (level: string, message: string, data?: any) => {
+  // Map legacy log calls to new system
+  const context = 'LegacyLog';
+  switch (level.toUpperCase()) {
+    case 'ERROR':
+      logger.error(message, data, context);
+      break;
+    case 'WARN':
+      logger.warn(message, data, context);
+      break;
+    case 'DEBUG':
+      logger.debug(message, data, context);
+      break;
+    default:
+      logger.info(message, data, context);
+  }
+};
+
 

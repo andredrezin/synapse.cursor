@@ -116,9 +116,6 @@ const Pricing = () => {
   const [isLoading, setIsLoading] = useState<string | null>(null);
   const [subscription, setSubscription] = useState<SubscriptionStatus | null>(null);
   const [isCheckingSubscription, setIsCheckingSubscription] = useState(true);
-  const [couponCode, setCouponCode] = useState('');
-  const [couponApplied, setCouponApplied] = useState(false);
-
   // Check for success/canceled params
   useEffect(() => {
     if (searchParams.get('success') === 'true') {
@@ -160,7 +157,7 @@ const Pricing = () => {
     setIsLoading(planId);
     try {
       const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: { priceId, couponCode: couponCode.trim() || undefined },
+        body: { priceId },
       });
 
       if (error) throw error;
@@ -177,16 +174,6 @@ const Pricing = () => {
       });
     } finally {
       setIsLoading(null);
-    }
-  };
-
-  const handleApplyCoupon = () => {
-    if (couponCode.trim()) {
-      setCouponApplied(true);
-      toast({
-        title: "Cupom aplicado!",
-        description: `O cupom "${couponCode}" será validado no checkout.`,
-      });
     }
   };
 
@@ -228,10 +215,10 @@ const Pricing = () => {
               Escolha o plano ideal para seu negócio
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Desde monitoramento básico até automação completa com IA. 
+              Desde monitoramento básico até automação completa com IA.
               Escale conforme seu negócio cresce.
             </p>
-            
+
             {/* Current Subscription Status */}
             {subscription?.subscribed && (
               <div className="mt-6 flex flex-col items-center gap-3">
@@ -240,8 +227,8 @@ const Pricing = () => {
                   <span className="text-sm font-medium">
                     Você está no plano <strong>{subscription.plan_name}</strong>
                   </span>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     size="sm"
                     onClick={handleManageSubscription}
                     disabled={isLoading === 'manage'}
@@ -256,8 +243,8 @@ const Pricing = () => {
                     )}
                   </Button>
                 </div>
-                <Link 
-                  to="/dashboard/subscription-cancel" 
+                <Link
+                  to="/dashboard/subscription-cancel"
                   className="text-sm text-muted-foreground hover:text-destructive transition-colors"
                 >
                   Cancelar assinatura
@@ -266,59 +253,18 @@ const Pricing = () => {
             )}
           </div>
 
-          {/* Coupon Code Box */}
-          <Card className="max-w-md mx-auto mb-10">
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-2 mb-3">
-                <Tag className="h-5 w-5 text-primary" />
-                <Label htmlFor="coupon" className="text-base font-medium">Tem um cupom de desconto?</Label>
-              </div>
-              <div className="flex gap-2">
-                <Input
-                  id="coupon"
-                  placeholder="Digite seu cupom"
-                  value={couponCode}
-                  onChange={(e) => {
-                    setCouponCode(e.target.value);
-                    setCouponApplied(false);
-                  }}
-                  className="flex-1"
-                />
-                <Button
-                  variant={couponApplied ? "secondary" : "outline"}
-                  onClick={handleApplyCoupon}
-                  disabled={!couponCode.trim()}
-                >
-                  {couponApplied ? (
-                    <>
-                      <Check className="h-4 w-4 mr-1" />
-                      Aplicado
-                    </>
-                  ) : (
-                    "Aplicar"
-                  )}
-                </Button>
-              </div>
-              {couponApplied && (
-                <p className="text-sm text-chart-green mt-2 flex items-center gap-1">
-                  <Check className="h-3 w-3" />
-                  Cupom "{couponCode}" será aplicado no checkout
-                </p>
-              )}
-            </CardContent>
-          </Card>
+
 
           {/* Plans Grid */}
           <div className="grid md:grid-cols-3 gap-8 mb-16">
             {plans.map((plan) => {
               const isCurrent = isCurrentPlan(plan.id);
-              
+
               return (
-                <Card 
-                  key={plan.name} 
-                  className={`relative overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${
-                    plan.popular ? 'ring-2 ring-primary shadow-lg scale-105' : ''
-                  } ${isCurrent ? 'ring-2 ring-chart-green' : ''}`}
+                <Card
+                  key={plan.name}
+                  className={`relative overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${plan.popular ? 'ring-2 ring-primary shadow-lg scale-105' : ''
+                    } ${isCurrent ? 'ring-2 ring-chart-green' : ''}`}
                 >
                   {plan.popular && !isCurrent && (
                     <div className="absolute top-0 right-0">
@@ -327,7 +273,7 @@ const Pricing = () => {
                       </Badge>
                     </div>
                   )}
-                  
+
                   {isCurrent && (
                     <div className="absolute top-0 right-0">
                       <Badge className="rounded-none rounded-bl-lg bg-chart-green text-white">
@@ -335,7 +281,7 @@ const Pricing = () => {
                       </Badge>
                     </div>
                   )}
-                  
+
                   <CardHeader className="pb-4">
                     <div className={`inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br ${plan.color} text-white mb-4`}>
                       {plan.icon}
@@ -374,7 +320,7 @@ const Pricing = () => {
 
                   <CardFooter>
                     {isCurrent ? (
-                      <Button 
+                      <Button
                         className="w-full"
                         variant="outline"
                         onClick={handleManageSubscription}
@@ -388,7 +334,7 @@ const Pricing = () => {
                         Gerenciar Assinatura
                       </Button>
                     ) : (
-                      <Button 
+                      <Button
                         className={`w-full ${plan.popular ? '' : ''}`}
                         variant={plan.popular ? 'default' : 'outline'}
                         size="lg"
@@ -412,7 +358,7 @@ const Pricing = () => {
           {/* Feature Comparison */}
           <div className="mt-20">
             <h2 className="text-2xl font-bold text-center mb-8">Comparação Detalhada</h2>
-            
+
             <Card className="overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full">
@@ -528,28 +474,28 @@ const Pricing = () => {
               <Card className="p-6">
                 <h3 className="font-semibold mb-2">Por que o Premium exige Meta Official API?</h3>
                 <p className="text-sm text-muted-foreground">
-                  A Meta Official API é a única forma segura de enviar mensagens automáticas sem risco de bloqueio. 
+                  A Meta Official API é a única forma segura de enviar mensagens automáticas sem risco de bloqueio.
                   A Evolution API é ótima para monitoramento, mas não é segura para automação comercial.
                 </p>
               </Card>
               <Card className="p-6">
                 <h3 className="font-semibold mb-2">O que é o aprendizado contínuo (RAG)?</h3>
                 <p className="text-sm text-muted-foreground">
-                  Nossa IA aprende continuamente com as conversas da sua equipe de vendas, 
+                  Nossa IA aprende continuamente com as conversas da sua equipe de vendas,
                   criando uma base de conhecimento personalizada para responder como seus melhores vendedores.
                 </p>
               </Card>
               <Card className="p-6">
                 <h3 className="font-semibold mb-2">Posso mudar de plano a qualquer momento?</h3>
                 <p className="text-sm text-muted-foreground">
-                  Sim! Você pode fazer upgrade ou downgrade a qualquer momento clicando em "Gerenciar Assinatura". 
+                  Sim! Você pode fazer upgrade ou downgrade a qualquer momento clicando em "Gerenciar Assinatura".
                   O valor será calculado proporcionalmente ao período restante.
                 </p>
               </Card>
               <Card className="p-6">
                 <h3 className="font-semibold mb-2">O que acontece se eu cancelar?</h3>
                 <p className="text-sm text-muted-foreground">
-                  Seus dados ficam armazenados por 30 dias. Você pode voltar a qualquer momento 
+                  Seus dados ficam armazenados por 30 dias. Você pode voltar a qualquer momento
                   e retomar de onde parou, inclusive com todo o aprendizado da IA.
                 </p>
               </Card>

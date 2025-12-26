@@ -2,16 +2,16 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Phone, 
-  Wifi, 
-  WifiOff, 
-  RefreshCw, 
-  Trash2, 
+import {
+  Phone,
+  Wifi,
+  WifiOff,
+  RefreshCw,
+  Trash2,
   Users,
   QrCode,
   Loader2,
-  CheckCircle2,
+  CheckCircle,
   AlertCircle
 } from 'lucide-react';
 import { QRCodeDisplay } from './QRCodeDisplay';
@@ -37,17 +37,19 @@ interface ConnectionCardProps {
   onDisconnect: (id: string) => void;
   onDelete: (id: string) => void;
   onReconnect?: (id: string, provider: WhatsAppConnection['provider']) => void;
+  onSync?: (id: string) => void;
   isRefreshing?: boolean;
   isDisconnecting?: boolean;
   isDeleting?: boolean;
   isReconnecting?: boolean;
+  isSyncing?: boolean;
 }
 
 const statusConfig = {
   connected: {
     label: 'Conectado',
     variant: 'default' as const,
-    icon: CheckCircle2,
+    icon: CheckCircle,
     color: 'text-green-500',
     bgColor: 'bg-green-500/10 border-green-500/20',
   },
@@ -86,20 +88,22 @@ export function ConnectionCard({
   onDisconnect,
   onDelete,
   onReconnect,
+  onSync,
   isRefreshing,
   isDisconnecting,
   isDeleting,
   isReconnecting,
+  isSyncing,
 }: ConnectionCardProps) {
   const [showQR, setShowQR] = useState(
     connection.status === 'qr_pending' && !!connection.qr_code
   );
   const [showAssignDialog, setShowAssignDialog] = useState(false);
-  
-  const status = statusConfig[connection.status];
+
+  const status = statusConfig[connection.status] || statusConfig.disconnected;
   const StatusIcon = status.icon;
   const shouldAnimate = 'animate' in status && status.animate;
-  
+
   // Auto-open QR when available
   useEffect(() => {
     if (connection.status === 'qr_pending' && connection.qr_code) {
@@ -109,9 +113,9 @@ export function ConnectionCard({
       setShowQR(false);
     }
   }, [connection.status, connection.qr_code]);
-  
+
   // Check if connection is stuck (connecting for more than 5 minutes)
-  const isStuck = connection.status === 'connecting' && 
+  const isStuck = connection.status === 'connecting' &&
     new Date().getTime() - new Date(connection.updated_at).getTime() > 5 * 60 * 1000;
 
   return (
@@ -131,8 +135,8 @@ export function ConnectionCard({
               )}
             </div>
             <div className="flex flex-col items-end gap-2">
-              <Badge 
-                variant={status.variant} 
+              <Badge
+                variant={status.variant}
                 className={`flex items-center gap-1 ${status.bgColor} border`}
               >
                 <StatusIcon className={`h-3 w-3 ${status.color} ${shouldAnimate ? 'animate-spin' : ''}`} />
@@ -148,7 +152,7 @@ export function ConnectionCard({
           {/* Connected status indicator */}
           {connection.status === 'connected' && (
             <div className="flex items-center gap-2 p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
-              <CheckCircle2 className="h-5 w-5 text-green-500" />
+              <CheckCircle className="h-5 w-5 text-green-500" />
               <span className="text-sm text-green-600 dark:text-green-400 font-medium">
                 WhatsApp conectado e pronto para uso!
               </span>
@@ -166,16 +170,16 @@ export function ConnectionCard({
           )}
 
           {/* QR Code Section - Show for qr_pending, connecting, or disconnected with QR */}
-          {(connection.status === 'qr_pending' || connection.status === 'connecting' || connection.status === 'disconnected') && 
-           connection.qr_code && (
-            <div className="flex justify-center">
-              <QRCodeDisplay 
-                qrCode={connection.qr_code} 
-                isOpen={showQR}
-                onToggle={() => setShowQR(!showQR)}
-              />
-            </div>
-          )}
+          {(connection.status === 'qr_pending' || connection.status === 'connecting' || connection.status === 'disconnected') &&
+            connection.qr_code && (
+              <div className="flex justify-center">
+                <QRCodeDisplay
+                  qrCode={connection.qr_code}
+                  isOpen={showQR}
+                  onToggle={() => setShowQR(!showQR)}
+                />
+              </div>
+            )}
 
           {/* Stuck connection warning */}
           {isStuck && (
@@ -204,6 +208,24 @@ export function ConnectionCard({
               </Button>
             )}
 
+            {/* Sync Button for Evolution instances to force status check */}
+            {onSync && connection.provider === 'evolution' && !isDeleting && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onSync(connection.id)}
+                disabled={isSyncing}
+                title="Sincronizar status com o servidor"
+              >
+                {isSyncing ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                )}
+                Sincronizar
+              </Button>
+            )}
+
             {/* Reconnect button for stuck connections */}
             {isStuck && onReconnect && (
               <Button
@@ -221,22 +243,22 @@ export function ConnectionCard({
               </Button>
             )}
 
-            {(connection.status === 'disconnected' || connection.status === 'qr_pending') && 
-             connection.provider === 'evolution' && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onRefreshQR(connection.id)}
-                disabled={isRefreshing}
-              >
-                {isRefreshing ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <QrCode className="h-4 w-4 mr-2" />
-                )}
-                {connection.qr_code ? 'Atualizar QR' : 'Gerar QR Code'}
-              </Button>
-            )}
+            {(connection.status === 'disconnected' || connection.status === 'qr_pending') &&
+              connection.provider === 'evolution' && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onRefreshQR(connection.id)}
+                  disabled={isRefreshing}
+                >
+                  {isRefreshing ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <QrCode className="h-4 w-4 mr-2" />
+                  )}
+                  {connection.qr_code ? 'Atualizar QR' : 'Gerar QR Code'}
+                </Button>
+              )}
 
             <Button
               variant="outline"
@@ -262,7 +284,7 @@ export function ConnectionCard({
                 <AlertDialogHeader>
                   <AlertDialogTitle>Excluir conexão?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Esta ação não pode ser desfeita. A conexão "{connection.name}" 
+                    Esta ação não pode ser desfeita. A conexão "{connection.name}"
                     será removida permanentemente.
                   </AlertDialogDescription>
                 </AlertDialogHeader>

@@ -71,7 +71,8 @@
     "churnAnalytics": "Análise de Churn",
     "aiAnalytics": "Analytics IA",
     "subscription": "Assinatura",
-    "pixel": "Pixel de Rastreio"
+    "pixel": "Pixel de Rastreio",
+    "ranking": "Ranking"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -185,7 +186,7 @@
     "leadsReport": "Relatório de Leads",
     "teamReport": "Relatório da Equipe"
   },
-"settings": {
+  "settings": {
     "title": "Configurações",
     "subtitle": "Gerencie as configurações do seu workspace e preferências",
     "workspace": "Workspace",

@@ -4,10 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { 
-  Users, 
-  Search, 
-  MessageCircle, 
+import {
+  Users,
+  Search,
+  MessageCircle,
   MoreHorizontal,
   ExternalLink,
   Plus,
@@ -16,6 +16,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { useLeads } from '@/hooks/useLeads';
+import { useNavigate } from 'react-router-dom';
 import { usePermissions } from '@/hooks/usePermissions';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR, enUS, es } from 'date-fns/locale';
@@ -45,6 +46,15 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import {
   Pagination,
   PaginationContent,
   PaginationItem,
@@ -57,11 +67,15 @@ import {
 const Leads = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 50;
-  const { leads, metrics, isLoading, deleteLead, pagination } = useLeads({ page: currentPage, pageSize });
+  const { leads, metrics, isLoading, createLead, deleteLead, pagination } = useLeads({ page: currentPage, pageSize });
+  const navigate = useNavigate();
   const { isAdmin, canDeleteLeads, canExportData } = usePermissions();
   const [searchQuery, setSearchQuery] = useState('');
   const [temperatureFilter, setTemperatureFilter] = useState<string>('all');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [newLeadName, setNewLeadName] = useState('');
+  const [newLeadPhone, setNewLeadPhone] = useState('');
   const [leadToDelete, setLeadToDelete] = useState<string | null>(null);
   const { t, i18n } = useTranslation();
 
@@ -106,12 +120,12 @@ const Leads = () => {
   };
 
   const filteredLeads = leads.filter(lead => {
-    const matchesSearch = 
+    const matchesSearch =
       lead.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       lead.phone.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (lead.email?.toLowerCase().includes(searchQuery.toLowerCase()));
-    
-    const matchesTemperature = 
+
+    const matchesTemperature =
       temperatureFilter === 'all' || lead.temperature === temperatureFilter;
 
     return matchesSearch && matchesTemperature;
@@ -129,6 +143,24 @@ const Leads = () => {
       setLeadToDelete(null);
     }
   };
+
+  const handleCreateLead = () => {
+    if (!newLeadName || !newLeadPhone) return;
+
+    createLead({
+      name: newLeadName,
+      phone: newLeadPhone,
+      status: 'new',
+      source: 'manual',
+    });
+
+    setCreateDialogOpen(false);
+    setNewLeadName('');
+    setNewLeadPhone('');
+    setNewLeadPhone('');
+  };
+
+
 
   if (isLoading) {
     return (
@@ -160,7 +192,7 @@ const Leads = () => {
               {isAdmin ? t('leads.title') : t('dashboard.myLeads')}
             </h1>
             <p className="text-muted-foreground">
-              {isAdmin 
+              {isAdmin
                 ? t('leads.allLeads')
                 : t('leads.allLeads')
               }
@@ -168,7 +200,7 @@ const Leads = () => {
           </div>
           <div className="flex gap-2">
             {isAdmin && (
-              <Button>
+              <Button onClick={() => setCreateDialogOpen(true)}>
                 <Plus className="w-4 h-4 mr-2" />
                 {t('leads.addLead')}
               </Button>
@@ -228,8 +260,8 @@ const Leads = () => {
         <div className="flex flex-wrap gap-4">
           <div className="relative flex-1 min-w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input 
-              placeholder={t('common.search')} 
+            <Input
+              placeholder={t('common.search')}
               className="pl-10"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -266,8 +298,8 @@ const Leads = () => {
               <div className="text-center py-12">
                 <Users className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
                 <p className="text-muted-foreground">
-                  {searchQuery || temperatureFilter !== 'all' 
-                    ? t('common.noData') 
+                  {searchQuery || temperatureFilter !== 'all'
+                    ? t('common.noData')
                     : t('leads.noLeads')
                   }
                 </p>
@@ -312,12 +344,16 @@ const Leads = () => {
 
                       <div className="flex items-center gap-2">
                         <span className="text-xs text-muted-foreground hidden sm:block">
-                          {formatDistanceToNow(new Date(lead.created_at), { 
-                            addSuffix: true, 
-                            locale: getLocale() 
+                          {formatDistanceToNow(new Date(lead.created_at), {
+                            addSuffix: true,
+                            locale: getLocale()
                           })}
                         </span>
-                        <Button variant="ghost" size="icon">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => navigate(`/dashboard/conversations?lead=${lead.id}`)}
+                        >
                           <MessageCircle className="w-4 h-4" />
                         </Button>
                         <DropdownMenu>
@@ -330,7 +366,7 @@ const Leads = () => {
                             <DropdownMenuItem>{t('common.details')}</DropdownMenuItem>
                             <DropdownMenuItem>{t('common.edit')}</DropdownMenuItem>
                             {canDeleteLeads && (
-                              <DropdownMenuItem 
+                              <DropdownMenuItem
                                 className="text-destructive"
                                 onClick={() => handleDeleteClick(lead.id)}
                               >
@@ -338,6 +374,7 @@ const Leads = () => {
                                 {t('common.delete')}
                               </DropdownMenuItem>
                             )}
+
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
@@ -365,7 +402,7 @@ const Leads = () => {
                   <span>Anterior</span>
                 </Button>
               </PaginationItem>
-              
+
               {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
                 let pageNum: number;
                 if (pagination.totalPages <= 5) {
@@ -377,7 +414,7 @@ const Leads = () => {
                 } else {
                   pageNum = currentPage - 2 + i;
                 }
-                
+
                 return (
                   <PaginationItem key={pageNum}>
                     <Button
@@ -390,7 +427,7 @@ const Leads = () => {
                   </PaginationItem>
                 );
               })}
-              
+
               <PaginationItem>
                 <Button
                   variant="ghost"
@@ -431,6 +468,41 @@ const Leads = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('leads.addLead')}</DialogTitle>
+            <DialogDescription>
+              Preencha os dados do novo lead abaixo.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Nome</Label>
+              <Input
+                id="name"
+                placeholder="Ex: Dona Maria"
+                value={newLeadName}
+                onChange={(e) => setNewLeadName(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="phone">Telefone</Label>
+              <Input
+                id="phone"
+                placeholder="Ex: 5511999999999"
+                value={newLeadPhone}
+                onChange={(e) => setNewLeadPhone(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={handleCreateLead} disabled={!newLeadName || !newLeadPhone}>Salvar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };

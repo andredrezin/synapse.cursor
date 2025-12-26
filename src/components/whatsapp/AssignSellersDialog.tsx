@@ -13,6 +13,9 @@ import { Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { useSubscription } from '@/hooks/useSubscription';
+import { Bot, Sparkles, User } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 interface AssignSellersDialogProps {
   connectionId: string;
@@ -44,6 +47,8 @@ export function AssignSellersDialog({
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isAIActive, setIsAIActive] = useState(false);
+  const { plan } = useSubscription();
 
   useEffect(() => {
     if (isOpen && workspace?.id) {
@@ -52,26 +57,34 @@ export function AssignSellersDialog({
   }, [isOpen, workspace?.id, connectionId]);
 
   const loadData = async () => {
+    if (!workspace?.id) return;
     setIsLoading(true);
     try {
       // Load team members
       const { data: membersData, error: membersError } = await supabase
         .from('workspace_members')
-        .select(`
-          user_id,
-          profiles!inner(id, full_name, user_id)
-        `)
-        .eq('workspace_id', workspace!.id);
+        .select('user_id')
+        .eq('workspace_id', workspace.id);
 
       if (membersError) throw membersError;
 
-      const teamMembers = membersData?.map((m: any) => ({
-        id: m.profiles.id,
-        full_name: m.profiles.full_name,
-        user_id: m.profiles.user_id,
-      })) || [];
+      const teamMembers = await Promise.all(
+        (membersData || []).map(async (m) => {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('id, full_name, user_id')
+            .eq('user_id', m.user_id)
+            .maybeSingle();
+          return profile;
+        })
+      );
 
-      setMembers(teamMembers);
+      // Filter out null profiles and map to local type
+      setMembers(teamMembers.filter(Boolean).map((p: any) => ({
+        id: p.id,
+        full_name: p.full_name,
+        user_id: p.user_id,
+      })));
 
       // Load current assignments
       const { data: assignmentsData, error: assignmentsError } = await supabase
@@ -82,11 +95,21 @@ export function AssignSellersDialog({
       if (assignmentsError) throw assignmentsError;
 
       setAssignments(assignmentsData || []);
+
+      // Load AI status
+      const { data: aiStatus, error: aiError } = await supabase
+        .from('ai_training_status')
+        .select('linked_whatsapp_id, status')
+        .eq('workspace_id', workspace.id)
+        .maybeSingle();
+
+      if (aiError) console.warn('Error loading AI status:', aiError);
+      setIsAIActive(aiStatus?.linked_whatsapp_id === connectionId);
     } catch (error) {
-      console.error('Error loading data:', error);
+      console.error('Error loading data in AssignSellersDialog:', error);
       toast({
         title: 'Erro ao carregar dados',
-        description: 'Não foi possível carregar os vendedores',
+        description: 'Não foi possível carregar os vendedores. Verifique sua conexão.',
         variant: 'destructive',
       });
     } finally {
@@ -142,6 +165,29 @@ export function AssignSellersDialog({
         if (error) throw error;
       }
 
+      // Handle AI Assignment update
+      if (plan === 'premium') {
+        if (isAIActive) {
+          await supabase.from('ai_training_status').upsert({
+            workspace_id: workspace!.id,
+            linked_whatsapp_id: connectionId,
+          }, { onConflict: 'workspace_id' });
+        } else {
+          // If it was linked to THIS connection, unlink it
+          const { data: currentAI } = await supabase
+            .from('ai_training_status')
+            .select('linked_whatsapp_id')
+            .eq('workspace_id', workspace!.id)
+            .maybeSingle();
+
+          if (currentAI?.linked_whatsapp_id === connectionId) {
+            await supabase.from('ai_training_status').update({
+              linked_whatsapp_id: null
+            }).eq('workspace_id', workspace!.id);
+          }
+        }
+      }
+
       toast({
         title: 'Vendedores atualizados',
         description: 'As atribuições foram salvas com sucesso',
@@ -179,6 +225,36 @@ export function AssignSellersDialog({
           </p>
         ) : (
           <div className="space-y-4 py-4">
+            {/* AI Assistant (Virtual Member) */}
+            {plan === 'premium' && (
+              <div className="flex items-center justify-between p-3 rounded-lg border-2 border-primary/20 bg-primary/5">
+                <div className="flex items-center gap-3">
+                  <Checkbox
+                    id="ai-assistant"
+                    checked={isAIActive}
+                    onCheckedChange={(checked) => setIsAIActive(!!checked)}
+                  />
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                      <Bot className="w-4 h-4 text-primary" />
+                    </div>
+                    <div className="flex flex-col">
+                      <Label htmlFor="ai-assistant" className="cursor-pointer font-bold flex items-center gap-2">
+                        IA Synapse (Robô)
+                        <Sparkles className="w-3 h-3 text-amber-500" />
+                      </Label>
+                      <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
+                        Membro IA Fixo
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <Badge variant="outline" className="bg-chart-green/10 text-chart-green border-chart-green/30">
+                  ATIVO
+                </Badge>
+              </div>
+            )}
+
             {members.map((member) => (
               <div
                 key={member.id}

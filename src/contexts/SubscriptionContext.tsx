@@ -1,5 +1,5 @@
 import React, { createContext, useContext } from 'react';
-import { useSubscription, SubscriptionPlan, PLANS, FEATURE_REQUIREMENTS } from '@/hooks/useSubscription';
+import { useSubscription, SubscriptionPlan, PLANS, FEATURE_REQUIREMENTS, AI_LIMITS } from '@/hooks/useSubscription';
 
 interface SubscriptionContextType {
   isSubscribed: boolean;
@@ -35,4 +35,4 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
 };
 
 // Re-export for convenience
-export { PLANS, FEATURE_REQUIREMENTS, type SubscriptionPlan };
+export { PLANS, FEATURE_REQUIREMENTS, AI_LIMITS, type SubscriptionPlan };

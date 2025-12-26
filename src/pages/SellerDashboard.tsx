@@ -4,11 +4,11 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { 
-  TrendingUp, 
-  MessageSquare, 
-  Clock, 
-  Target, 
+import {
+  TrendingUp,
+  MessageSquare,
+  Clock,
+  Target,
   Users,
   Flame,
   CheckCircle2,
@@ -19,6 +19,8 @@ import { useDashboardMetrics } from '@/hooks/useDashboardMetrics';
 import { useLeads } from '@/hooks/useLeads';
 import ConversionChart from '@/components/dashboard/ConversionChart';
 import { useNavigate } from 'react-router-dom';
+import { SellerRankingCard } from '@/components/dashboard/SellerRankingCard';
+import { CoachingTips } from '@/components/dashboard/CoachingTips';
 
 const SellerDashboard = () => {
   const { profile } = useAuth();
@@ -34,8 +36,8 @@ const SellerDashboard = () => {
   const newLeads = myLeads.filter(lead => lead.status === 'new');
 
   // Calculate seller-specific metrics
-  const conversionRate = myLeads.length > 0 
-    ? Math.round((convertedLeads.length / myLeads.length) * 100) 
+  const conversionRate = myLeads.length > 0
+    ? Math.round((convertedLeads.length / myLeads.length) * 100)
     : 0;
 
   if (isLoading || leadsLoading) {
@@ -136,83 +138,94 @@ const SellerDashboard = () => {
           </Card>
         </div>
 
-        {/* Performance & Goals */}
-        <div className="grid gap-6 lg:grid-cols-2">
-          {/* Goals Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Target className="w-5 h-5" />
-                Metas do Mês
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <div className="flex justify-between text-sm mb-2">
-                  <span>Conversões</span>
-                  <span className="font-medium">{convertedLeads.length}/10</span>
-                </div>
-                <Progress value={(convertedLeads.length / 10) * 100} className="h-2" />
-              </div>
-              <div>
-                <div className="flex justify-between text-sm mb-2">
-                  <span>Leads Atendidos</span>
-                  <span className="font-medium">{myLeads.length}/50</span>
-                </div>
-                <Progress value={(myLeads.length / 50) * 100} className="h-2" />
-              </div>
-              <div>
-                <div className="flex justify-between text-sm mb-2">
-                  <span>Taxa de Conversão</span>
-                  <span className="font-medium">{conversionRate}%/25%</span>
-                </div>
-                <Progress value={(conversionRate / 25) * 100} className="h-2" />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Hot Leads Quick View */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <Flame className="w-5 h-5 text-chart-orange" />
-                Leads Quentes
-              </CardTitle>
-              <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard/leads')}>
-                Ver todos
-              </Button>
-            </CardHeader>
-            <CardContent>
-              {hotLeads.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Flame className="w-12 h-12 mx-auto mb-2 opacity-20" />
-                  <p>Nenhum lead quente no momento</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {hotLeads.slice(0, 4).map((lead) => (
-                    <div 
-                      key={lead.id}
-                      className="flex items-center justify-between p-3 rounded-lg border border-border/50 hover:bg-secondary/30 transition-colors cursor-pointer"
-                      onClick={() => navigate('/dashboard/leads')}
-                    >
-                      <div>
-                        <p className="font-medium">{lead.name}</p>
-                        <p className="text-xs text-muted-foreground">{lead.phone}</p>
-                      </div>
-                      <Badge variant="destructive" className="bg-chart-orange/20 text-chart-orange border-0">
-                        Quente
-                      </Badge>
+        {/* Main Content Grid */}
+        <div className="grid gap-6 lg:grid-cols-3">
+          {/* Left Column: Stats & Performance */}
+          <div className="lg:col-span-2 space-y-6">
+            <div className="grid gap-6 md:grid-cols-2">
+              {/* Goals Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Target className="w-5 h-5" />
+                    Metas do Mês
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <div className="flex justify-between text-sm mb-2">
+                      <span>Conversões</span>
+                      <span className="font-medium">{convertedLeads.length}/10</span>
                     </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+                    <Progress value={(convertedLeads.length / 10) * 100} className="h-2" />
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-sm mb-2">
+                      <span>Leads Atendidos</span>
+                      <span className="font-medium">{myLeads.length}/50</span>
+                    </div>
+                    <Progress value={(myLeads.length / 50) * 100} className="h-2" />
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-sm mb-2">
+                      <span>Taxa de Conversão</span>
+                      <span className="font-medium">{conversionRate}%/25%</span>
+                    </div>
+                    <Progress value={(conversionRate / 25) * 100} className="h-2" />
+                  </div>
+                </CardContent>
+              </Card>
 
-        {/* Chart */}
-        <ConversionChart />
+              {/* Hot Leads Quick View */}
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <Flame className="w-5 h-5 text-chart-orange" />
+                    Leads Quentes
+                  </CardTitle>
+                  <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard/leads')}>
+                    Ver todos
+                  </Button>
+                </CardHeader>
+                <CardContent>
+                  {hotLeads.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Flame className="w-12 h-12 mx-auto mb-2 opacity-20" />
+                      <p>Nenhum lead quente no momento</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {hotLeads.slice(0, 4).map((lead) => (
+                        <div
+                          key={lead.id}
+                          className="flex items-center justify-between p-3 rounded-lg border border-border/50 hover:bg-secondary/30 transition-colors cursor-pointer"
+                          onClick={() => navigate('/dashboard/leads')}
+                        >
+                          <div>
+                            <p className="font-medium">{lead.name}</p>
+                            <p className="text-xs text-muted-foreground">{lead.phone}</p>
+                          </div>
+                          <Badge variant="destructive" className="bg-chart-orange/20 text-chart-orange border-0">
+                            Quente
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Chart */}
+            <ConversionChart />
+          </div>
+
+          {/* Right Column: Gamification & AI */}
+          <div className="space-y-6">
+            <SellerRankingCard />
+            <CoachingTips />
+          </div>
+        </div>
 
         {/* New Leads Alert */}
         {newLeads.length > 0 && (

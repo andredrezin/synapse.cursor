@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { useEffect } from 'react';
 
 interface AITrainingStatus {
   id: string;
@@ -57,7 +58,7 @@ export const useAITraining = () => {
     queryKey: ['ai-training-status', workspaceId],
     queryFn: async () => {
       if (!workspaceId) return null;
-      
+
       const { data, error } = await supabase
         .from('ai_training_status')
         .select('*')
@@ -75,7 +76,7 @@ export const useAITraining = () => {
     queryKey: ['ai-training-progress', workspaceId],
     queryFn: async () => {
       if (!workspaceId) return null;
-      
+
       const { data, error } = await supabase
         .rpc('calculate_training_progress', { ws_id: workspaceId });
 
@@ -91,7 +92,7 @@ export const useAITraining = () => {
     queryKey: ['ai-learned-content', workspaceId],
     queryFn: async () => {
       if (!workspaceId) return [];
-      
+
       const { data, error } = await supabase
         .from('ai_learned_content')
         .select('*')
@@ -105,18 +106,18 @@ export const useAITraining = () => {
     enabled: !!workspaceId,
   });
 
-  // Start training (creates initial status)
+  // Start training (creates or updates initial status)
   const startTraining = useMutation({
     mutationFn: async (linkedWhatsappId: string) => {
       if (!workspaceId) throw new Error('No workspace');
 
       const { data, error } = await supabase
         .from('ai_training_status')
-        .insert({
+        .upsert({
           workspace_id: workspaceId,
           linked_whatsapp_id: linkedWhatsappId,
           status: 'learning',
-        })
+        }, { onConflict: 'workspace_id' })
         .select()
         .single();
 
@@ -132,10 +133,92 @@ export const useAITraining = () => {
     },
   });
 
+  // Initialize status if missing
+  const initializeStatus = useMutation({
+    mutationFn: async () => {
+      if (!workspaceId) return;
+
+      console.log('Autocreating training status for workspace:', workspaceId);
+
+      const { data, error } = await supabase
+        .from('ai_training_status')
+        .insert({
+          workspace_id: workspaceId,
+          status: 'learning',
+          messages_analyzed: 0,
+          faqs_detected: 0,
+          company_info_extracted: 0,
+          seller_patterns_learned: 0,
+          objections_learned: 0,
+          confidence_score: 0,
+          min_days_required: 7,
+          min_messages_required: 100,
+          started_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (error) {
+        // If conflict (already exists), just ignore
+        if (error.code === '23505') return;
+        throw error;
+      }
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ai-training-status', workspaceId] });
+    }
+  });
+
+  // Auto-initialize
+  useEffect(() => {
+    if (workspaceId && !isLoadingStatus && !trainingStatus) {
+      initializeStatus.mutate();
+    }
+  }, [workspaceId, isLoadingStatus, trainingStatus]);
+
   // Activate AI (admin approval)
   const activateAI = useMutation({
     mutationFn: async () => {
-      if (!workspaceId || !trainingStatus) throw new Error('No training status');
+      // If we are activating but status object is missing in cache (rare with auto-init), fetch it or use what we partially know
+      if (!workspaceId) throw new Error('No workspace');
+
+      let statusId = trainingStatus?.id;
+
+      // Safety check: if no ID, try to find it first OR create it
+      if (!statusId) {
+        console.log('Validating AI Status for activation...');
+        const { data: existing } = await supabase.from('ai_training_status').select('id').eq('workspace_id', workspaceId).limit(1).maybeSingle();
+
+        if (existing) {
+          statusId = existing.id;
+        } else {
+          console.log('No status found during activation. Creating one...');
+          const { data: created, error: createError } = await supabase
+            .from('ai_training_status')
+            .insert({
+              workspace_id: workspaceId,
+              status: 'learning',
+              messages_analyzed: 0,
+              faqs_detected: 0,
+              company_info_extracted: 0,
+              seller_patterns_learned: 0,
+              objections_learned: 0,
+              confidence_score: 0,
+              min_days_required: 7,
+              min_messages_required: 100,
+              started_at: new Date().toISOString()
+            })
+            .select()
+            .single();
+
+          if (createError) {
+            console.error('Auto-create failed:', createError);
+            throw new Error('Failed to auto-create AI status: ' + createError.message);
+          }
+          statusId = created.id;
+        }
+      }
 
       const { data: profile } = await supabase
         .from('profiles')
@@ -150,7 +233,7 @@ export const useAITraining = () => {
           activated_at: new Date().toISOString(),
           activated_by: profile?.id,
         })
-        .eq('id', trainingStatus.id);
+        .eq('id', statusId);
 
       if (error) throw error;
     },

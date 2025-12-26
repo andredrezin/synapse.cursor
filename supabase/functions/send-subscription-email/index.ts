@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@2.0.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -15,15 +16,21 @@ const logStep = (step: string, details?: Record<string, unknown>) => {
 
 interface EmailRequest {
   to: string;
-  type: "subscription_created" | "subscription_canceled" | "payment_failed" | "payment_success";
+  type: "subscription_created" | "subscription_canceled" | "payment_failed" | "payment_success" | "team_invite" | "create_member";
+  password?: string;
+  fullName?: string;
+  role?: "admin" | "member" | "seller";
+  workspaceId?: string;
   planName?: string;
   subscriptionEnd?: string;
   customerName?: string;
+  workspaceName?: string;
+  inviteLink?: string;
 }
 
-const getEmailContent = (type: EmailRequest["type"], planName?: string, subscriptionEnd?: string, customerName?: string) => {
+const getEmailContent = (type: EmailRequest["type"], planName?: string, subscriptionEnd?: string, customerName?: string, workspaceName?: string, inviteLink?: string) => {
   const name = customerName || "Cliente";
-  
+
   switch (type) {
     case "subscription_created":
       return {
@@ -56,7 +63,7 @@ const getEmailContent = (type: EmailRequest["type"], planName?: string, subscrip
           </div>
         `,
       };
-      
+
     case "subscription_canceled":
       return {
         subject: "😢 Sentiremos sua falta",
@@ -83,7 +90,7 @@ const getEmailContent = (type: EmailRequest["type"], planName?: string, subscrip
           </div>
         `,
       };
-      
+
     case "payment_failed":
       return {
         subject: "⚠️ Problema com seu pagamento",
@@ -110,7 +117,34 @@ const getEmailContent = (type: EmailRequest["type"], planName?: string, subscrip
           </div>
         `,
       };
-      
+
+    case "team_invite":
+      return {
+        subject: `📩 Você foi convidado para o workspace ${workspaceName}!`,
+        html: `
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; padding: 40px; text-align: center; color: white;">
+              <h1 style="margin: 0 0 10px 0; font-size: 28px;">Olá!</h1>
+              <p style="margin: 0; font-size: 18px; opacity: 0.9;">Você foi convidado para integrar a equipe no <strong>${workspaceName}</strong>.</p>
+            </div>
+            
+            <div style="background: #f8f9fa; border-radius: 12px; padding: 30px; margin-top: 20px; text-align: center;">
+              <p style="margin: 0 0 20px 0; color: #333; font-size: 16px;">
+                Como membro da equipe, você poderá gerenciar leads, conversas e acompanhar métricas importantes.
+              </p>
+              
+              <a href="${inviteLink || `${Deno.env.get("SITE_URL") || "https://leadflux.lovable.app"}/auth`}" 
+                 style="display: inline-block; background: #667eea; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+                Aceitar Convite
+              </a>
+            </div>
+            
+            <p style="color: #6c757d; font-size: 14px; text-align: center; margin-top: 30px;">
+              Se você não esperava por este convite, pode ignorar este email.
+            </p>
+          </div>
+        `,
+      };
     case "payment_success":
       return {
         subject: "✅ Pagamento confirmado",
@@ -134,7 +168,7 @@ const getEmailContent = (type: EmailRequest["type"], planName?: string, subscrip
           </div>
         `,
       };
-      
+
     default:
       return {
         subject: "Atualização da sua assinatura",
@@ -150,25 +184,79 @@ serve(async (req) => {
 
   try {
     logStep("Function started");
-    
-    const { to, type, planName, subscriptionEnd, customerName }: EmailRequest = await req.json();
-    
+
+    const body: EmailRequest = await req.json();
+    const { to, type, planName, subscriptionEnd, customerName, workspaceName, inviteLink, password, fullName, role, workspaceId } = body;
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: { persistSession: false },
+    });
+
+    if (type === "create_member") {
+      logStep("Direct Member Creation triggered", { to, workspaceId });
+
+      const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+        email: to,
+        password: password || Math.random().toString(36).slice(-12),
+        email_confirm: true,
+        user_metadata: { full_name: fullName }
+      });
+
+      if (createError) throw createError;
+
+      await supabaseAdmin
+        .from("profiles")
+        .update({
+          full_name: fullName,
+          onboarding_completed: true,
+          current_workspace_id: workspaceId
+        })
+        .eq("user_id", newUser.user.id);
+
+      const { error: joinError } = await supabaseAdmin
+        .from("workspace_members")
+        .insert({
+          workspace_id: workspaceId,
+          user_id: newUser.user.id,
+          role: role || "seller"
+        });
+
+      if (joinError) throw joinError;
+
+      return new Response(JSON.stringify({ success: true, userId: newUser.user.id }), {
+        status: 200,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
     if (!to || !type) {
       throw new Error("Missing required fields: to and type");
     }
-    
-    logStep("Preparing email", { to, type, planName });
-    
-    const { subject, html } = getEmailContent(type, planName, subscriptionEnd, customerName);
-    
+
+    logStep("Preparing email", { to, type, planName, workspaceName });
+
+    if (!Deno.env.get("RESEND_API_KEY")) {
+      logStep("ERROR: RESEND_API_KEY is missing");
+      throw new Error("Configuração de e-mail (RESEND_API_KEY) não encontrada no servidor.");
+    }
+
+    const { subject, html } = getEmailContent(type, planName, subscriptionEnd, customerName, workspaceName, inviteLink);
+
     const emailResponse = await resend.emails.send({
-      from: "LeadFlux <noreply@resend.dev>",
+      from: "WhatsMetrics <onboarding@resend.dev>",
       to: [to],
       subject,
       html,
     });
 
-    logStep("Email sent successfully", { emailResponse });
+    if (emailResponse.error) {
+      logStep("Resend API Error", { error: emailResponse.error });
+      throw new Error(emailResponse.error.message || "Erro retornado pela API do Resend");
+    }
+
+    logStep("Email sent successfully", { emailId: (emailResponse.data as any)?.id });
 
     return new Response(JSON.stringify({ success: true, emailResponse }), {
       status: 200,

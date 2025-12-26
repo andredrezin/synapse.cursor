@@ -35,7 +35,9 @@ import SubscriptionCancel from "./pages/SubscriptionCancel";
 import ChurnAnalytics from "./pages/ChurnAnalytics";
 import AIAnalytics from "./pages/AIAnalytics";
 import SellerDashboard from "./pages/SellerDashboard";
+import Ranking from "./pages/Ranking";
 import LeadDistributionSettings from "./pages/LeadDistributionSettings";
+import AILearning from "./pages/AILearning";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -55,14 +57,14 @@ const App = () => (
               <Route path="/auth/callback" element={<AuthCallback />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
-              
+
               {/* Onboarding - requires auth but not onboarding completion */}
               <Route path="/onboarding" element={
                 <ProtectedRoute requireOnboarding={false} requireWorkspace={false}>
                   <Onboarding />
                 </ProtectedRoute>
               } />
-              
+
               {/* Protected Dashboard Routes */}
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/dashboard/seller" element={<ProtectedRoute><SellerDashboard /></ProtectedRoute>} />
@@ -85,9 +87,11 @@ const App = () => (
               <Route path="/dashboard/subscription-cancel" element={<ProtectedRoute><SubscriptionCancel /></ProtectedRoute>} />
               <Route path="/dashboard/churn-analytics" element={<ProtectedRoute><ChurnAnalytics /></ProtectedRoute>} />
               <Route path="/dashboard/ai-analytics" element={<ProtectedRoute><AIAnalytics /></ProtectedRoute>} />
+              <Route path="/dashboard/ai-learning" element={<ProtectedRoute><AILearning /></ProtectedRoute>} />
+              <Route path="/dashboard/ranking" element={<ProtectedRoute><Ranking /></ProtectedRoute>} />
               <Route path="/dashboard/lead-distribution" element={<ProtectedRoute><LeadDistributionSettings /></ProtectedRoute>} />
               <Route path="/dashboard/chat/:conversationId" element={<ProtectedRoute><ChatRoom /></ProtectedRoute>} />
-              
+
               {/* 404 */}
               <Route path="*" element={<NotFound />} />
             </Routes>

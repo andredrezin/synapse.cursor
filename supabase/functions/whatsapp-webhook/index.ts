@@ -68,17 +68,17 @@ interface OfficialWebhook {
           timestamp: string;
           type: string;
           text?: { body: string };
-          audio?: { 
-            id: string; 
+          audio?: {
+            id: string;
             mime_type: string;
           };
-          image?: { 
-            id: string; 
+          image?: {
+            id: string;
             mime_type: string;
             caption?: string;
           };
-          document?: { 
-            id: string; 
+          document?: {
+            id: string;
             mime_type: string;
             filename?: string;
           };
@@ -99,9 +99,9 @@ function log(level: "INFO" | "WARN" | "ERROR" | "DEBUG", message: string, data?:
 
 // Helper function to transcribe audio via our edge function
 async function transcribeAudio(
-  supabaseUrl: string, 
-  supabaseKey: string, 
-  audioUrl: string | undefined, 
+  supabaseUrl: string,
+  supabaseKey: string,
+  audioUrl: string | undefined,
   mimeType: string | undefined,
   requestId: string
 ): Promise<string> {
@@ -153,9 +153,9 @@ async function transcribeAudio(
 
 // Helper function to analyze images via our edge function
 async function analyzeImage(
-  supabaseUrl: string, 
-  supabaseKey: string, 
-  imageUrl: string | undefined, 
+  supabaseUrl: string,
+  supabaseKey: string,
+  imageUrl: string | undefined,
   mimeType: string | undefined,
   context: string | null,
   requestId: string
@@ -225,7 +225,7 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     const body = await req.json();
-    log("INFO", `[${requestId}] Webhook received`, { 
+    log("INFO", `[${requestId}] Webhook received`, {
       bodyType: body.event ? "evolution" : body.object ? "official" : "unknown",
       event: body.event,
       instance: body.instance,
@@ -281,7 +281,7 @@ async function handleEvolutionWebhook(supabase: any, supabaseUrl: string, supaba
     case "CONNECTION_UPDATE":
       const state = data?.state || data?.status;
       let newStatus = "disconnected";
-      
+
       if (state === "open" || state === "connected") {
         newStatus = "connected";
       } else if (state === "connecting") {
@@ -290,16 +290,16 @@ async function handleEvolutionWebhook(supabase: any, supabaseUrl: string, supaba
         newStatus = "disconnected";
       }
 
-      log("INFO", `[${requestId}] Connection status update`, { 
-        connectionId: connection.id, 
+      log("INFO", `[${requestId}] Connection status update`, {
+        connectionId: connection.id,
         previousStatus: connection.status,
         newStatus,
-        state 
+        state
       });
 
       await supabase
         .from("whatsapp_connections")
-        .update({ 
+        .update({
           status: newStatus,
           phone_number: data?.phoneNumber || connection.phone_number,
           qr_code: newStatus === "connected" ? null : connection.qr_code,
@@ -318,11 +318,11 @@ async function handleEvolutionWebhook(supabase: any, supabaseUrl: string, supaba
     case "QRCODE_UPDATED":
       const qrCode = data?.qrcode?.base64 || data?.base64;
       log("INFO", `[${requestId}] QR code update`, { connectionId: connection.id, hasQrCode: !!qrCode });
-      
+
       if (qrCode) {
         await supabase
           .from("whatsapp_connections")
-          .update({ 
+          .update({
             qr_code: qrCode,
             status: "qr_pending",
           })
@@ -333,7 +333,7 @@ async function handleEvolutionWebhook(supabase: any, supabaseUrl: string, supaba
     case "MESSAGES_UPSERT":
       const messages = Array.isArray(data) ? data : [data];
       log("INFO", `[${requestId}] Messages received`, { connectionId: connection.id, messageCount: messages.length });
-      
+
       for (const msgData of messages) {
         await processIncomingMessage(supabase, supabaseUrl, supabaseKey, connection, msgData, requestId);
       }
@@ -373,11 +373,11 @@ async function handleOfficialWebhook(supabase: any, supabaseUrl: string, supabas
       }
 
       if (value.messages) {
-        log("INFO", `[${requestId}] Processing Official API messages`, { 
-          connectionId: connection.id, 
-          messageCount: value.messages.length 
+        log("INFO", `[${requestId}] Processing Official API messages`, {
+          connectionId: connection.id,
+          messageCount: value.messages.length
         });
-        
+
         for (const msg of value.messages) {
           await processOfficialMessage(supabase, supabaseUrl, supabaseKey, connection, msg, requestId);
         }
@@ -401,11 +401,11 @@ async function processIncomingMessage(supabase: any, supabaseUrl: string, supaba
 
     const remoteJid = key.remoteJid;
     const phoneNumber = remoteJid.split("@")[0];
-    
+
     let content = "";
     let messageType = "text";
     let mediaInfo: { url?: string; mimeType?: string; caption?: string } | null = null;
-    
+
     if (msgData.message?.conversation) {
       content = msgData.message.conversation;
     } else if (msgData.message?.extendedTextMessage?.text) {
@@ -414,16 +414,16 @@ async function processIncomingMessage(supabase: any, supabaseUrl: string, supaba
       // Audio message - needs transcription
       messageType = "audio";
       const audio = msgData.message.audioMessage;
-      mediaInfo = { 
-        url: audio.url, 
-        mimeType: audio.mimetype 
+      mediaInfo = {
+        url: audio.url,
+        mimeType: audio.mimetype
       };
-      log("INFO", `[${requestId}] Audio message detected`, { 
-        mimeType: audio.mimetype, 
+      log("INFO", `[${requestId}] Audio message detected`, {
+        mimeType: audio.mimetype,
         seconds: audio.seconds,
-        ptt: audio.ptt 
+        ptt: audio.ptt
       });
-      
+
       // Transcribe audio
       content = await transcribeAudio(supabaseUrl, supabaseKey, audio.url, audio.mimetype, requestId);
       if (!content) {
@@ -433,20 +433,20 @@ async function processIncomingMessage(supabase: any, supabaseUrl: string, supaba
       // Image message - needs analysis
       messageType = "image";
       const image = msgData.message.imageMessage;
-      mediaInfo = { 
-        url: image.url, 
+      mediaInfo = {
+        url: image.url,
         mimeType: image.mimetype,
-        caption: image.caption 
+        caption: image.caption
       };
-      log("INFO", `[${requestId}] Image message detected`, { 
+      log("INFO", `[${requestId}] Image message detected`, {
         mimeType: image.mimetype,
         dimensions: `${image.width}x${image.height}`,
         hasCaption: !!image.caption
       });
-      
+
       // Analyze image
       const imageDescription = await analyzeImage(supabaseUrl, supabaseKey, image.url, image.mimetype, null, requestId);
-      content = image.caption 
+      content = image.caption
         ? `${image.caption}\n\n[Descrição da imagem: ${imageDescription}]`
         : `[Imagem: ${imageDescription}]`;
     } else if (msgData.message?.documentMessage) {
@@ -462,9 +462,9 @@ async function processIncomingMessage(supabase: any, supabaseUrl: string, supaba
 
     const senderName = msgData.pushName || phoneNumber;
 
-    log("INFO", `[${requestId}] Processing incoming message`, { 
-      phoneNumber, 
-      senderName, 
+    log("INFO", `[${requestId}] Processing incoming message`, {
+      phoneNumber,
+      senderName,
       contentLength: content.length,
       messageId: key.id
     });
@@ -533,16 +533,16 @@ async function processOfficialMessage(supabase: any, supabaseUrl: string, supaba
   try {
     const phoneNumber = msg.from;
     const content = msg.text?.body || "";
-    
+
     if (!content) {
       log("DEBUG", `[${requestId}] Non-text Official API message, skipping`, { type: msg.type });
       return;
     }
 
-    log("INFO", `[${requestId}] Processing Official API message`, { 
-      phoneNumber, 
+    log("INFO", `[${requestId}] Processing Official API message`, {
+      phoneNumber,
       contentLength: content.length,
-      messageId: msg.id 
+      messageId: msg.id
     });
 
     let lead = await findOrCreateLead(supabase, connection, phoneNumber, phoneNumber, requestId);
@@ -593,25 +593,25 @@ async function processOfficialMessage(supabase: any, supabaseUrl: string, supaba
 
 // === NEW: AI RESPONSE PROCESSING ===
 async function processAIResponse(
-  supabase: any, 
-  supabaseUrl: string, 
-  supabaseKey: string, 
-  connection: any, 
-  lead: any, 
-  conversation: any, 
+  supabase: any,
+  supabaseUrl: string,
+  supabaseKey: string,
+  connection: any,
+  lead: any,
+  conversation: any,
   messageContent: string,
   requestId: string
 ) {
   try {
-    log("INFO", `[${requestId}] Starting AI processing`, { 
+    log("INFO", `[${requestId}] Starting AI processing`, {
       workspace_id: connection.workspace_id,
       lead_id: lead.id,
       conversation_id: conversation.id
     });
 
-    // Call AI Router - pass connection_id to verify WhatsApp link
-    const aiRouterUrl = `${supabaseUrl}/functions/v1/ai-router`;
-    
+    // Call AI Router Multi - pass connection_id to verify WhatsApp link
+    const aiRouterUrl = `${supabaseUrl}/functions/v1/ai-router-multi`;
+
     // First, try to get AI chat response
     const chatResponse = await fetch(aiRouterUrl, {
       method: "POST",
@@ -632,20 +632,29 @@ async function processAIResponse(
     });
 
     const chatData = await chatResponse.json();
-    log("DEBUG", `[${requestId}] AI Router chat response`, { 
-      success: chatData.success, 
+    log("DEBUG", `[${requestId}] AI Router chat response`, {
+      success: chatData.success,
       reason: chatData.reason,
       provider: chatData.provider
     });
 
     if (chatData.success && chatData.data?.response) {
-      // AI is enabled and generated a response - send it via WhatsApp
+      // AI is enabled and generated a response
       const aiResponse = chatData.data.response;
-      
-      log("INFO", `[${requestId}] AI generated response`, { 
+      const settings = chatData.data.ai_settings; // Passed from router
+
+      // Calculate delay (humanized)
+      const minDelay = settings?.response_delay_min || 5;
+      const maxDelay = settings?.response_delay_max || 15;
+      const delay = Math.floor(Math.random() * (maxDelay - minDelay + 1) + minDelay) * 1000;
+
+      log("INFO", `[${requestId}] AI generated response, waiting ${delay}ms`, {
         responseLength: aiResponse.length,
         provider: chatData.provider
       });
+
+      // Simple delay to simulate humanization
+      await new Promise(resolve => setTimeout(resolve, delay));
 
       // Send the AI response via WhatsApp
       const sendUrl = `${supabaseUrl}/functions/v1/whatsapp-send`;
@@ -660,13 +669,15 @@ async function processAIResponse(
           to: lead.phone,
           message: aiResponse,
           type: "text",
+          // Evolution API specific: typing indicator
+          ...(connection.provider === 'evolution' && { delay: 1000, presence: 'composing' })
         }),
       });
 
       const sendData = await sendResponse.json();
-      
+
       if (sendData.success) {
-        log("INFO", `[${requestId}] AI response sent via WhatsApp`, { 
+        log("INFO", `[${requestId}] AI response sent via WhatsApp`, {
           leadPhone: lead.phone,
           messageId: sendData.messageId
         });
@@ -744,10 +755,10 @@ async function processAIResponse(
       }).catch(err => log("WARN", `[${requestId}] Qualification failed`, { error: err.message }));
 
       // Don't await - run in background
-      Promise.all([learnPromise, analyzePromise, qualifyPromise]).catch(() => {});
+      Promise.all([learnPromise, analyzePromise, qualifyPromise]).catch(() => { });
     } else {
       // Don't await - run in background
-      Promise.all([learnPromise, analyzePromise]).catch(() => {});
+      Promise.all([learnPromise, analyzePromise]).catch(() => { });
     }
 
     log("INFO", `[${requestId}] AI processing completed (learning always active)`);

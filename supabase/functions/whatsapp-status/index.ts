@@ -67,7 +67,7 @@ serve(async (req) => {
       );
     }
 
-    log("DEBUG", `[${requestId}] Connection found`, { 
+    log("DEBUG", `[${requestId}] Connection found`, {
       connectionId: connection.id,
       provider: connection.provider,
       status: connection.status,
@@ -103,12 +103,12 @@ serve(async (req) => {
             if (qrData.base64) {
               await supabase
                 .from("whatsapp_connections")
-                .update({ 
+                .update({
                   qr_code: qrData.base64,
                   status: "qr_pending",
                 })
                 .eq("id", connection_id);
-              
+
               result.qr_code = qrData.base64;
               log("INFO", `[${requestId}] QR code refreshed successfully`);
             }
@@ -128,7 +128,7 @@ serve(async (req) => {
 
           await supabase
             .from("whatsapp_connections")
-            .update({ 
+            .update({
               status: "disconnected",
               qr_code: null,
             })
@@ -140,7 +140,7 @@ serve(async (req) => {
             event_type: "manual_disconnect",
             event_data: { action: "disconnect", timestamp: new Date().toISOString() },
           });
-          
+
           result.message = "Disconnected successfully";
           log("INFO", `[${requestId}] Instance disconnected`);
           break;
@@ -158,7 +158,7 @@ serve(async (req) => {
             .from("whatsapp_connections")
             .update({ status: "connecting" })
             .eq("id", connection_id);
-          
+
           result.message = "Reconnecting...";
           log("INFO", `[${requestId}] Instance reconnecting`);
           break;
@@ -175,7 +175,7 @@ serve(async (req) => {
           if (statusResponse.ok) {
             const statusData = await statusResponse.json();
             const state = statusData.instance?.state || "disconnected";
-            
+
             let newStatus = "disconnected";
             if (state === "open" || state === "connected") {
               newStatus = "connected";
@@ -185,9 +185,47 @@ serve(async (req) => {
 
             log("INFO", `[${requestId}] Status checked`, { state, newStatus });
 
+            const updateData: any = { status: newStatus };
+
+            // If connected, try to fetch the phone number
+            if (newStatus === "connected") {
+              try {
+                log("INFO", `[${requestId}] Fetching number for connected instance`);
+                // We use fetchInstances to get the owner JID which contains the number
+                const instancesResponse = await fetch(`${evolutionApiUrl}/instance/fetchInstances`, {
+                  method: "GET",
+                  headers: { "apikey": evolutionApiKey },
+                });
+
+                if (instancesResponse.ok) {
+                  const instances = await instancesResponse.json();
+                  // Find our instance
+                  // Evolution v1 might return array directly, v2 might return inside an object. 
+                  // Usually it's an array of instance objects.
+                  const instanceData = Array.isArray(instances)
+                    ? instances.find((i: any) => i.instance.instanceName === instance_name || i.instance.name === instance_name)
+                    : instances.find?.((i: any) => i.instance.instanceName === instance_name); // Fallback if it's a wrapper
+
+                  // Evolution API structure varies. Often: record.instance.owner (JID)
+                  if (instanceData && instanceData.instance && instanceData.instance.owner) {
+                    const ownerJid = instanceData.instance.owner; // e.g. 551199999999@s.whatsapp.net
+                    const phoneNumber = ownerJid.split('@')[0];
+                    updateData.phone_number = phoneNumber;
+                    log("INFO", `[${requestId}] Phone number found: ${phoneNumber}`);
+                  } else {
+                    log("WARN", `[${requestId}] Instance found but no owner/number`, { instanceData });
+                  }
+                } else {
+                  log("WARN", `[${requestId}] Failed to fetch instances list`);
+                }
+              } catch (numErr) {
+                log("ERROR", `[${requestId}] Error fetching phone number`, { error: numErr });
+              }
+            }
+
             await supabase
               .from("whatsapp_connections")
-              .update({ status: newStatus })
+              .update(updateData)
               .eq("id", connection_id);
 
             result.status = newStatus;
@@ -221,7 +259,7 @@ serve(async (req) => {
               .from("whatsapp_connections")
               .update({ status: "disconnected" })
               .eq("id", connection_id);
-            
+
             result.status = "disconnected";
             result.message = "Token expired or invalid";
             log("WARN", `[${requestId}] Token invalid or expired`);
@@ -240,7 +278,7 @@ serve(async (req) => {
             event_type: "manual_disconnect",
             event_data: { action: "disconnect", timestamp: new Date().toISOString() },
           });
-          
+
           result.message = "Disconnected successfully";
           break;
 

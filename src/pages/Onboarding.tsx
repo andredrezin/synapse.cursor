@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -24,17 +24,18 @@ const Onboarding = () => {
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  
+
   // Step 1: Admin data
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
-  
+
   // Step 2: Company data
   const [companyName, setCompanyName] = useState('');
   const [position, setPosition] = useState('');
-  
+
   const { user, profile, workspace, createWorkspace, updateProfile } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
 
   // Pre-fill with existing profile data
@@ -99,6 +100,63 @@ const Onboarding = () => {
 
     setIsLoading(true);
 
+    const inviteId = searchParams.get('invite');
+
+    if (inviteId) {
+      // Handle invitation acceptance
+      try {
+        const { data: invite, error: inviteError } = await supabase
+          .from('team_invites')
+          .select('*')
+          .eq('id', inviteId)
+          .single();
+
+        if (inviteError || !invite || invite.status !== 'pending') {
+          throw new Error('Convite inválido ou já expirado.');
+        }
+
+        // Add user to workspace
+        const { error: memberError } = await supabase
+          .from('workspace_members')
+          .insert({
+            workspace_id: invite.workspace_id,
+            user_id: user.id,
+            role: invite.role,
+          });
+
+        if (memberError) throw memberError;
+
+        // Update invite status
+        await supabase
+          .from('team_invites')
+          .update({ status: 'accepted' })
+          .eq('id', inviteId);
+
+        // Update profile
+        await updateProfile({
+          current_workspace_id: invite.workspace_id,
+          onboarding_completed: true
+        });
+
+        toast({
+          title: 'Convite aceito!',
+          description: 'Você agora faz parte da equipe.',
+        });
+
+        setStep(3);
+        setTimeout(() => navigate('/dashboard', { replace: true }), 2500);
+        return;
+      } catch (err: any) {
+        toast({
+          variant: 'destructive',
+          title: 'Erro ao aceitar convite',
+          description: err.message,
+        });
+        setIsLoading(false);
+        return;
+      }
+    }
+
     // Update profile with company info
     const { error: profileError } = await updateProfile({
       company: companyName.trim(),
@@ -132,7 +190,7 @@ const Onboarding = () => {
     }
 
     setStep(3);
-    
+
     toast({
       title: 'Configuração concluída!',
       description: 'Seu workspace está pronto para uso.',
@@ -172,7 +230,7 @@ const Onboarding = () => {
             </div>
             <span className="text-xl font-bold">WhatsMetrics</span>
           </Link>
-          
+
           {/* Step indicators */}
           {step < 3 && (
             <div className="flex items-center justify-center gap-2">
@@ -187,7 +245,7 @@ const Onboarding = () => {
                 <User className="w-5 h-5" />
                 <span className="text-sm font-medium">Passo 1 de 2</span>
               </div>
-              
+
               <div>
                 <CardTitle className="text-2xl">Seus dados</CardTitle>
                 <CardDescription className="mt-2">
@@ -203,7 +261,7 @@ const Onboarding = () => {
                 <Building2 className="w-5 h-5" />
                 <span className="text-sm font-medium">Passo 2 de 2</span>
               </div>
-              
+
               <div>
                 <CardTitle className="text-2xl">Sua empresa</CardTitle>
                 <CardDescription className="mt-2">
@@ -343,10 +401,10 @@ const Onboarding = () => {
               )}
 
               <div className="flex gap-2">
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => setStep(1)} 
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setStep(1)}
                   disabled={isLoading}
                   className="flex-1"
                 >
@@ -374,7 +432,7 @@ const Onboarding = () => {
               <div className="w-full bg-secondary rounded-full h-2 overflow-hidden">
                 <div className="bg-primary h-2 rounded-full animate-pulse" style={{ width: '100%' }} />
               </div>
-              
+
               <div className="space-y-2 text-sm">
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <CheckCircle className="w-4 h-4 text-primary" />

@@ -56,7 +56,7 @@ export const useTeamMembers = () => {
         // Get leads converted by this member
         let conversions = 0;
         let conversations = 0;
-        
+
         if (profileData?.id) {
           const { count: convCount } = await supabase
             .from('leads')
@@ -152,13 +152,80 @@ export const useTeamMembers = () => {
       return { error };
     }
 
-    toast({
-      title: 'Convite enviado!',
-      description: `Convite enviado para ${email}.`,
-    });
+    // Send invitation email
+    try {
+      const { data: emailData, error: emailInvokeError } = await supabase.functions.invoke('send-subscription-email', {
+        body: {
+          to: email,
+          type: 'team_invite',
+          workspaceName: workspace?.name || 'Nosso Workspace',
+          inviteLink: `${window.location.origin}/auth?invite=${data.id}&email=${encodeURIComponent(email)}`,
+        },
+      });
+
+      if (emailInvokeError || emailData?.error) {
+        throw new Error(emailInvokeError?.message || emailData?.error || 'Erro desconhecido ao enviar e-mail');
+      }
+
+      console.log('Invitation email triggered successfully');
+
+      toast({
+        title: 'Convite enviado!',
+        description: `Convite enviado para ${email}.`,
+      });
+    } catch (emailErr: any) {
+      console.error('Error triggering invitation email:', emailErr);
+      toast({
+        variant: 'destructive',
+        title: 'Convite criado, mas e-mail falhou',
+        description: emailErr.message || 'Verifique as configurações do Resend no Supabase.',
+      });
+    }
 
     await fetchMembers();
     return { data, error: null };
+  };
+
+  const createMemberDirectly = async (email: string, password?: string, fullName: string = '', role: string = 'seller') => {
+    if (!workspace?.id) {
+      return { error: new Error('No workspace selected') };
+    }
+
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('send-subscription-email', {
+        body: {
+          to: email,
+          type: 'create_member',
+          password,
+          fullName,
+          role,
+          workspaceId: workspace.id,
+        },
+      });
+
+      if (error || data?.error) {
+        throw new Error(error?.message || data?.error || 'Falha ao criar usuário diretamente');
+      }
+
+      toast({
+        title: 'Membro criado com sucesso!',
+        description: `O acesso para ${email} está pronto.`,
+      });
+
+      await fetchMembers();
+      return { success: true };
+    } catch (err: any) {
+      console.error('Error creating member directly:', err);
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao criar membro',
+        description: err.message,
+      });
+      return { error: err };
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const removeMember = async (memberId: string) => {
@@ -243,6 +310,7 @@ export const useTeamMembers = () => {
     canManage: workspaceRole === 'owner' || workspaceRole === 'admin',
     fetchMembers,
     inviteMember,
+    createMemberDirectly,
     removeMember,
     updateMemberRole,
     cancelInvite,

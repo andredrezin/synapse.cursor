@@ -57,7 +57,7 @@ const isWithinActiveHours = (settings: AISettings): boolean => {
 
   const now = new Date();
   const timezone = settings.timezone || 'America/Sao_Paulo';
-  
+
   try {
     const formatter = new Intl.DateTimeFormat('en-US', {
       timeZone: timezone,
@@ -65,17 +65,17 @@ const isWithinActiveHours = (settings: AISettings): boolean => {
       minute: '2-digit',
       hour12: false,
     });
-    
+
     const currentTime = formatter.format(now);
     const [currentHour, currentMinute] = currentTime.split(':').map(Number);
     const currentMinutes = currentHour * 60 + currentMinute;
-    
+
     const [startHour, startMinute] = settings.active_hours_start.split(':').map(Number);
     const [endHour, endMinute] = settings.active_hours_end.split(':').map(Number);
-    
+
     const startMinutes = startHour * 60 + startMinute;
     const endMinutes = endHour * 60 + endMinute;
-    
+
     if (startMinutes <= endMinutes) {
       return currentMinutes >= startMinutes && currentMinutes <= endMinutes;
     } else {
@@ -96,7 +96,7 @@ const containsTransferKeyword = (message: string, keywords: string[] | null): bo
 
 serve(async (req) => {
   const requestId = crypto.randomUUID().slice(0, 8);
-  
+
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -118,7 +118,7 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseKey);
     const body: RouteRequest = await req.json();
-    
+
     log('INFO', `[${requestId}] Routing request`, {
       task: body.task,
       workspace_id: body.workspace_id,
@@ -146,7 +146,7 @@ serve(async (req) => {
 
     // Skip validation for analyze, sentiment, and qualify tasks (always allowed)
     const skipValidationTasks: TaskType[] = ['analyze', 'qualify', 'sentiment'];
-    
+
     if (!skipValidationTasks.includes(body.task)) {
       // Check AI Training Status for chat/suggest tasks
       const { data: trainingStatus } = await supabase
@@ -160,16 +160,16 @@ serve(async (req) => {
       if (!training || training.status !== 'active') {
         log('INFO', `[${requestId}] AI not active`, { status: training?.status });
         return new Response(
-          JSON.stringify({ 
-            success: false, 
+          JSON.stringify({
+            success: false,
             reason: 'ai_not_active',
-            message: training?.status === 'learning' 
-              ? 'IA em período de aprendizado' 
+            message: training?.status === 'learning'
+              ? 'IA em período de aprendizado'
               : training?.status === 'ready'
-              ? 'IA pronta aguardando ativação'
-              : training?.status === 'paused'
-              ? 'IA pausada'
-              : 'IA não configurada'
+                ? 'IA pronta aguardando ativação'
+                : training?.status === 'paused'
+                  ? 'IA pausada'
+                  : 'IA não configurada'
           }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
@@ -179,8 +179,8 @@ serve(async (req) => {
       if (body.connection_id && training.linked_whatsapp_id && body.connection_id !== training.linked_whatsapp_id) {
         log('INFO', `[${requestId}] WhatsApp not linked`);
         return new Response(
-          JSON.stringify({ 
-            success: false, 
+          JSON.stringify({
+            success: false,
             reason: 'whatsapp_not_linked',
             message: 'WhatsApp não vinculado à IA Premium'
           }),
@@ -188,25 +188,8 @@ serve(async (req) => {
         );
       }
 
-      // Check Meta Official API requirement
-      if (body.connection_id) {
-        const { data: whatsappConnection } = await supabase
-          .from('whatsapp_connections')
-          .select('provider')
-          .eq('id', body.connection_id)
-          .single();
-
-        if (whatsappConnection && whatsappConnection.provider !== 'official') {
-          return new Response(
-            JSON.stringify({ 
-              success: false, 
-              reason: 'invalid_provider',
-              message: 'Chatbot Premium requer Meta Official API'
-            }),
-            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
-        }
-      }
+      // Evolution API is allowed for testing as requested by user
+      // No longer restrictive to 'official' only
 
       // Check is_enabled
       if (settings && settings.is_enabled === false) {
@@ -251,11 +234,18 @@ serve(async (req) => {
 
     log('DEBUG', `[${requestId}] Calling ${endpoint}`);
 
-    // Prepare payload - add realtime flag for sentiment task
+    // Prepare payload - add humanized formatting instructions for chat
+    const humanizedInstructions = "\n\nIMPORTANTE: Responda em estilo WhatsApp humanizado. Use quebras de linha curtas, emojis moderados e evite textos longos ou robotizados. Não pareça uma IA.";
+
     const payload = {
       ...body.payload,
       workspace_id: body.workspace_id,
-      ai_settings: settings,
+      ai_settings: settings ? {
+        ...settings,
+        system_prompt: body.task === 'chat'
+          ? (settings.system_prompt || '') + humanizedInstructions
+          : settings.system_prompt
+      } : null,
       ...(body.task === 'sentiment' && { realtime: true }),
     };
 
@@ -282,9 +272,9 @@ serve(async (req) => {
         task: body.task,
         data: responseData,
       }),
-      { 
+      {
         status: response.status,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
 
@@ -294,9 +284,9 @@ serve(async (req) => {
     });
 
     return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+      JSON.stringify({
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
       }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

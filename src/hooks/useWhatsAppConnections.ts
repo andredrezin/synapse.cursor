@@ -24,7 +24,7 @@ export function useWhatsAppConnections() {
   const { workspace } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
+
   // OAuth popup state
   const oauthStateRef = useRef<OAuthPopupState>({
     popup: null,
@@ -36,7 +36,7 @@ export function useWhatsAppConnections() {
     queryKey: ['whatsapp-connections', workspace?.id],
     queryFn: async () => {
       if (!workspace?.id) return [];
-      
+
       const { data, error } = await supabase
         .from('whatsapp_connections')
         .select('*')
@@ -68,7 +68,7 @@ export function useWhatsAppConnections() {
       if (data?.status === 'connected') {
         toast({
           title: 'WhatsApp conectado!',
-          description: data.phone_number 
+          description: data.phone_number
             ? `Número ${data.phone_number} vinculado com sucesso`
             : 'Sua conta foi vinculada com sucesso',
         });
@@ -81,7 +81,7 @@ export function useWhatsAppConnections() {
         });
         return true;
       }
-      
+
       return false;
     } catch (error) {
       logError('Error checking connection status', error instanceof Error ? error : new Error(String(error)), 'useWhatsAppConnections');
@@ -112,7 +112,7 @@ export function useWhatsAppConnections() {
       // Check if popup was closed
       if (oauthStateRef.current.popup?.closed) {
         const wasSuccessful = await checkConnectionStatus();
-        
+
         if (!wasSuccessful) {
           toast({
             title: 'Autenticação cancelada',
@@ -179,12 +179,12 @@ export function useWhatsAppConnections() {
 
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-      
+
       return data;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['whatsapp-connections', workspace?.id] });
-      
+
       // If official provider, open Facebook OAuth in a new window/tab
       if (data?.oauth_url) {
         // Calculate popup window position (centered)
@@ -192,13 +192,13 @@ export function useWhatsAppConnections() {
         const height = 700;
         const left = window.screenX + (window.outerWidth - width) / 2;
         const top = window.screenY + (window.outerHeight - height) / 2;
-        
+
         const popup = window.open(
           data.oauth_url,
           'facebook_oauth',
           `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes`
         );
-        
+
         // Start polling to detect OAuth completion
         if (popup && !popup.closed && data?.connection_id) {
           startOAuthPolling(data.connection_id, popup);
@@ -216,7 +216,7 @@ export function useWhatsAppConnections() {
         }
         return;
       }
-      
+
       toast({
         title: 'Conexão criada',
         description: 'Escaneie o QR Code para conectar',
@@ -242,7 +242,7 @@ export function useWhatsAppConnections() {
 
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-      
+
       return data;
     },
     onSuccess: () => {
@@ -268,7 +268,7 @@ export function useWhatsAppConnections() {
 
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-      
+
       return data;
     },
     onSuccess: () => {
@@ -312,6 +312,45 @@ export function useWhatsAppConnections() {
     },
   });
 
+  const checkStatus = useMutation({
+    mutationFn: async (connectionId: string) => {
+      const { data, error } = await supabase.functions.invoke('whatsapp-status', {
+        body: {
+          connection_id: connectionId,
+          action: 'check_status',
+        },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['whatsapp-connections', workspace?.id] });
+
+      if (data?.status === 'connected') {
+        toast({
+          title: 'Conexão estabelecida! 🎉',
+          description: `WhatsApp conectado com sucesso. ${data.phone_number ? `Número: ${data.phone_number}` : ''}`,
+        });
+      } else {
+        toast({
+          title: 'Status verificado',
+          description: `A conexão está em estado: ${data?.status || 'desconhecido'}.`,
+        });
+      }
+    },
+    onError: (error: any) => {
+      console.error("Check status error", error);
+      toast({
+        title: 'Erro ao sincronizar',
+        description: error.message || 'Ocorreu um erro ao verificar o status da conexão.',
+        variant: 'destructive',
+      });
+    }
+  });
+
   return {
     connections,
     isLoading,
@@ -320,5 +359,6 @@ export function useWhatsAppConnections() {
     refreshQRCode,
     disconnect,
     deleteConnection,
+    checkStatus,
   };
 }

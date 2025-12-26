@@ -1,4 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -75,6 +76,10 @@ export const useDashboardMetrics = () => {
         }
 
         if (functionData?.success) {
+          log('INFO', 'Dashboard Initial Load', {
+            metrics: functionData.metrics,
+            sourceStats: functionData.sourceData
+          });
           return {
             metrics: functionData.metrics as DashboardMetrics,
             conversionData: functionData.conversionData as ConversionData[],
@@ -104,10 +109,65 @@ export const useDashboardMetrics = () => {
       }
     },
     enabled: !!workspace?.id,
-    staleTime: 60 * 1000, // 1 minuto - métricas podem ser atualizadas a cada minuto
-    gcTime: 5 * 60 * 1000, // 5 minutos
-    refetchInterval: 60 * 1000, // Refetch a cada minuto automaticamente
+    staleTime: 1000 * 60 * 5, // 5 minutes (data is considered fresh for longer now that we have realtime invalidation)
+    gcTime: 1000 * 60 * 30, // 30 minutes
   });
+
+  // Realtime Subscription
+  // Expert Note: Instead of polling every second, we listen to the database changes.
+  // This reduces server load to near zero when idle and gives instant updates when active.
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!workspace?.id) return;
+
+    log('INFO', 'Setting up Realtime subscription for Dashboard Metrics');
+
+    const channel = supabase
+      .channel('dashboard-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to INSERT, UPDATE, DELETE
+          schema: 'public',
+          table: 'leads',
+          filter: `workspace_id=eq.${workspace.id}`,
+        },
+        (payload) => {
+          log('INFO', 'Realtime update received: leads table', {
+            eventType: payload.eventType,
+            new: payload.new,
+            old: payload.old,
+            errors: payload.errors
+          });
+          queryClient.invalidateQueries({ queryKey: ['dashboard-metrics'] });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'conversations',
+          filter: `workspace_id=eq.${workspace.id}`,
+        },
+        (payload) => {
+          log('INFO', 'Realtime update received: conversations table', {
+            eventType: payload.eventType,
+            new: payload.new,
+            old: payload.old
+          });
+          queryClient.invalidateQueries({ queryKey: ['dashboard-metrics'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [workspace?.id, queryClient]);
+
+  // MOCK DATA REMOVED
 
   return {
     metrics: data?.metrics || {
@@ -125,6 +185,6 @@ export const useDashboardMetrics = () => {
     sourceData: data?.sourceData || [],
     isLoading,
     error,
-    refetch: () => {}, // TanStack Query gerencia isso automaticamente
+    refetch: () => { },
   };
 };

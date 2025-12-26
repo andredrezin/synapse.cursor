@@ -38,7 +38,7 @@ export default function WhatsAppConnections() {
   const [reconnectingId, setReconnectingId] = useState<string | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
-  
+
   const {
     connections,
     isLoading,
@@ -46,12 +46,16 @@ export default function WhatsAppConnections() {
     refreshQRCode,
     disconnect,
     deleteConnection,
+    checkStatus,
   } = useWhatsAppConnections();
 
-  const stuckConnections = connections?.filter(c => 
-    c.status === 'connecting' && 
+  const stuckConnections = connections?.filter(c =>
+    c.status === 'connecting' &&
     new Date().getTime() - new Date(c.updated_at).getTime() > 5 * 60 * 1000
   ) || [];
+
+  // ...
+
 
   useEffect(() => {
     const success = searchParams.get('success');
@@ -80,7 +84,7 @@ export default function WhatsAppConnections() {
         db_update_failed: t('whatsapp.dbUpdateFailed'),
         oauth_failed: t('whatsapp.oauthFailed'),
       };
-      
+
       toast({
         title: t('whatsapp.connectionError'),
         description: errorMessages[error] || t('whatsapp.connectionFailed'),
@@ -106,7 +110,7 @@ export default function WhatsAppConnections() {
 
   const handleReconnect = async (connectionId: string, provider: WhatsAppProvider) => {
     setReconnectingId(connectionId);
-    
+
     try {
       const connection = connections?.find(c => c.id === connectionId);
       if (!connection) return;
@@ -120,7 +124,7 @@ export default function WhatsAppConnections() {
 
       toast({
         title: t('whatsapp.reconnecting'),
-        description: provider === 'evolution' 
+        description: provider === 'evolution'
           ? t('whatsapp.scanQRToReconnect')
           : t('whatsapp.completeFacebookAuth'),
       });
@@ -250,10 +254,12 @@ export default function WhatsAppConnections() {
                     onDisconnect={(id) => disconnect.mutate(id)}
                     onDelete={(id) => deleteConnection.mutate(id)}
                     onReconnect={handleReconnect}
+                    onSync={(id) => checkStatus?.mutate(id)}
                     isRefreshing={refreshQRCode.isPending}
                     isDisconnecting={disconnect.isPending}
                     isDeleting={deleteConnection.isPending}
                     isReconnecting={reconnectingId === connection.id}
+                    isSyncing={checkStatus?.isPending}
                   />
                 ))}
               </div>
