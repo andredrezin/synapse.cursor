@@ -38,6 +38,7 @@ import SellerDashboard from "./pages/SellerDashboard";
 import Ranking from "./pages/Ranking";
 import LeadDistributionSettings from "./pages/LeadDistributionSettings";
 import AILearning from "./pages/AILearning";
+import SetupIA from "./pages/SetupIA";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -59,38 +60,219 @@ const App = () => (
               <Route path="/reset-password" element={<ResetPassword />} />
 
               {/* Onboarding - requires auth but not onboarding completion */}
-              <Route path="/onboarding" element={
-                <ProtectedRoute requireOnboarding={false} requireWorkspace={false}>
-                  <Onboarding />
-                </ProtectedRoute>
-              } />
+              <Route
+                path="/onboarding"
+                element={
+                  <ProtectedRoute
+                    requireOnboarding={false}
+                    requireWorkspace={false}
+                  >
+                    <Onboarding />
+                  </ProtectedRoute>
+                }
+              />
 
               {/* Protected Dashboard Routes */}
-              <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-              <Route path="/dashboard/seller" element={<ProtectedRoute><SellerDashboard /></ProtectedRoute>} />
-              <Route path="/dashboard/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-              <Route path="/dashboard/pixel" element={<ProtectedRoute><PixelGenerator /></ProtectedRoute>} />
-              <Route path="/dashboard/conversations" element={<ProtectedRoute><Conversations /></ProtectedRoute>} />
-              <Route path="/dashboard/team" element={<ProtectedRoute><Team /></ProtectedRoute>} />
-              <Route path="/dashboard/leads" element={<ProtectedRoute><Leads /></ProtectedRoute>} />
-              <Route path="/dashboard/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-              <Route path="/dashboard/scoring" element={<ProtectedRoute><LeadScoring /></ProtectedRoute>} />
-              <Route path="/dashboard/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
-              <Route path="/dashboard/automations" element={<ProtectedRoute><Automations /></ProtectedRoute>} />
-              <Route path="/dashboard/alerts" element={<ProtectedRoute><Alerts /></ProtectedRoute>} />
-              <Route path="/dashboard/templates" element={<ProtectedRoute><Templates /></ProtectedRoute>} />
-              <Route path="/dashboard/whatsapp" element={<ProtectedRoute><WhatsAppConnections /></ProtectedRoute>} />
-              <Route path="/dashboard/knowledge" element={<ProtectedRoute><KnowledgeBase /></ProtectedRoute>} />
-              <Route path="/dashboard/ai-settings" element={<ProtectedRoute><AISettings /></ProtectedRoute>} />
-              <Route path="/dashboard/pricing" element={<ProtectedRoute><Pricing /></ProtectedRoute>} />
-              <Route path="/dashboard/checkout-success" element={<ProtectedRoute><CheckoutSuccess /></ProtectedRoute>} />
-              <Route path="/dashboard/subscription-cancel" element={<ProtectedRoute><SubscriptionCancel /></ProtectedRoute>} />
-              <Route path="/dashboard/churn-analytics" element={<ProtectedRoute><ChurnAnalytics /></ProtectedRoute>} />
-              <Route path="/dashboard/ai-analytics" element={<ProtectedRoute><AIAnalytics /></ProtectedRoute>} />
-              <Route path="/dashboard/ai-learning" element={<ProtectedRoute><AILearning /></ProtectedRoute>} />
-              <Route path="/dashboard/ranking" element={<ProtectedRoute><Ranking /></ProtectedRoute>} />
-              <Route path="/dashboard/lead-distribution" element={<ProtectedRoute><LeadDistributionSettings /></ProtectedRoute>} />
-              <Route path="/dashboard/chat/:conversationId" element={<ProtectedRoute><ChatRoom /></ProtectedRoute>} />
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard/seller"
+                element={
+                  <ProtectedRoute>
+                    <SellerDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard/profile"
+                element={
+                  <ProtectedRoute>
+                    <Profile />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard/pixel"
+                element={
+                  <ProtectedRoute>
+                    <PixelGenerator />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard/conversations"
+                element={
+                  <ProtectedRoute>
+                    <Conversations />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard/team"
+                element={
+                  <ProtectedRoute>
+                    <Team />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard/leads"
+                element={
+                  <ProtectedRoute>
+                    <Leads />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard/settings"
+                element={
+                  <ProtectedRoute>
+                    <Settings />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard/scoring"
+                element={
+                  <ProtectedRoute>
+                    <LeadScoring />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard/reports"
+                element={
+                  <ProtectedRoute>
+                    <Reports />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard/automations"
+                element={
+                  <ProtectedRoute>
+                    <Automations />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard/alerts"
+                element={
+                  <ProtectedRoute>
+                    <Alerts />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard/templates"
+                element={
+                  <ProtectedRoute>
+                    <Templates />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard/whatsapp"
+                element={
+                  <ProtectedRoute>
+                    <WhatsAppConnections />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard/knowledge"
+                element={
+                  <ProtectedRoute>
+                    <KnowledgeBase />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard/ai-settings"
+                element={
+                  <ProtectedRoute>
+                    <AISettings />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard/pricing"
+                element={
+                  <ProtectedRoute>
+                    <Pricing />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard/checkout-success"
+                element={
+                  <ProtectedRoute>
+                    <CheckoutSuccess />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard/subscription-cancel"
+                element={
+                  <ProtectedRoute>
+                    <SubscriptionCancel />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard/churn-analytics"
+                element={
+                  <ProtectedRoute>
+                    <ChurnAnalytics />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard/ai-analytics"
+                element={
+                  <ProtectedRoute>
+                    <AIAnalytics />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard/ai-learning"
+                element={
+                  <ProtectedRoute>
+                    <AILearning />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard/ranking"
+                element={
+                  <ProtectedRoute>
+                    <Ranking />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard/lead-distribution"
+                element={
+                  <ProtectedRoute>
+                    <LeadDistributionSettings />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard/chat/:conversationId"
+                element={
+                  <ProtectedRoute>
+                    <ChatRoom />
+                  </ProtectedRoute>
+                }
+              />
 
               {/* 404 */}
               <Route path="*" element={<NotFound />} />

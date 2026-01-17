@@ -29,8 +29,15 @@ import { useLocation, Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePermissions } from "@/hooks/usePermissions";
 import { Badge } from "@/components/ui/badge";
-import { useSubscriptionContext, SubscriptionPlan } from "@/contexts/SubscriptionContext";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  useSubscriptionContext,
+  SubscriptionPlan,
+} from "@/contexts/SubscriptionContext";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useTranslation } from "react-i18next";
 
 interface DashboardSidebarProps {
@@ -38,7 +45,7 @@ interface DashboardSidebarProps {
   onToggle: () => void;
 }
 
-type PremiumRequirement = 'professional' | 'premium';
+type PremiumRequirement = "professional" | "premium";
 
 interface MenuItem {
   icon: React.ComponentType<{ className?: string }>;
@@ -58,52 +65,134 @@ const getAdminMenuSections = (t: any): MenuSection[] => [
     title: "Atendimento & Vendas",
     items: [
       { icon: LayoutDashboard, labelKey: "nav.dashboard", href: "/dashboard" },
-      { icon: MessageCircle, labelKey: "nav.conversations", href: "/dashboard/conversations" },
-      { icon: Phone, labelKey: "nav.whatsapp", href: "/dashboard/whatsapp", adminOnly: true },
+      {
+        icon: MessageCircle,
+        labelKey: "nav.conversations",
+        href: "/dashboard/conversations",
+      },
+      {
+        icon: Phone,
+        labelKey: "nav.whatsapp",
+        href: "/dashboard/whatsapp",
+        adminOnly: true,
+      },
       { icon: Users, labelKey: "nav.leads", href: "/dashboard/leads" },
-      { icon: Shuffle, labelKey: "nav.distribution", href: "/dashboard/lead-distribution", adminOnly: true },
-      { icon: FileText, labelKey: "nav.templates", href: "/dashboard/templates" },
-    ]
+      {
+        icon: Shuffle,
+        labelKey: "nav.distribution",
+        href: "/dashboard/lead-distribution",
+        adminOnly: true,
+      },
+      {
+        icon: FileText,
+        labelKey: "nav.templates",
+        href: "/dashboard/templates",
+      },
+    ],
   },
   {
     title: "IA Premium",
     items: [
-      { icon: Bot, labelKey: "nav.aiSettings", href: "/dashboard/ai-settings", adminOnly: true, requiredPlan: 'premium' },
-      { icon: BrainCircuit, labelKey: "nav.aiAnalytics", href: "/dashboard/ai-analytics", adminOnly: true },
-      { icon: Brain, labelKey: "nav.aiLearning", href: "/dashboard/ai-learning", adminOnly: true, requiredPlan: 'premium' },
-      { icon: BookOpen, labelKey: "nav.knowledgeBase", href: "/dashboard/knowledge", adminOnly: true, requiredPlan: 'professional' },
+      {
+        icon: Bot,
+        labelKey: "nav.aiSettings",
+        href: "/dashboard/ai-settings",
+        adminOnly: true,
+        requiredPlan: "premium",
+      },
+      {
+        icon: Sparkles,
+        labelKey: "nav.setupIA",
+        href: "/dashboard/setup-ia",
+        adminOnly: true,
+      },
+      {
+        icon: BrainCircuit,
+        labelKey: "nav.aiAnalytics",
+        href: "/dashboard/ai-analytics",
+        adminOnly: true,
+      },
+      {
+        icon: Brain,
+        labelKey: "nav.aiLearning",
+        href: "/dashboard/ai-learning",
+        adminOnly: true,
+        requiredPlan: "premium",
+      },
+      {
+        icon: BookOpen,
+        labelKey: "nav.knowledgeBase",
+        href: "/dashboard/knowledge",
+        adminOnly: true,
+        requiredPlan: "professional",
+      },
       { icon: Target, labelKey: "nav.leadScoring", href: "/dashboard/scoring" },
-    ]
+    ],
   },
   {
     title: "Gestão & Performance",
     items: [
       { icon: BarChart3, labelKey: "nav.reports", href: "/dashboard/reports" },
       { icon: Trophy, labelKey: "nav.ranking", href: "/dashboard/ranking" },
-      { icon: Users, labelKey: "nav.team", href: "/dashboard/team", adminOnly: true },
-      { icon: TrendingDown, labelKey: "nav.churnAnalytics", href: "/dashboard/churn-analytics", adminOnly: true },
-    ]
+      {
+        icon: Users,
+        labelKey: "nav.team",
+        href: "/dashboard/team",
+        adminOnly: true,
+      },
+      {
+        icon: TrendingDown,
+        labelKey: "nav.churnAnalytics",
+        href: "/dashboard/churn-analytics",
+        adminOnly: true,
+      },
+    ],
   },
   {
     title: "Configurações",
     items: [
-      { icon: Zap, labelKey: "nav.automations", href: "/dashboard/automations" },
+      {
+        icon: Zap,
+        labelKey: "nav.automations",
+        href: "/dashboard/automations",
+      },
       { icon: Bell, labelKey: "nav.alerts", href: "/dashboard/alerts" },
-      { icon: CreditCard, labelKey: "nav.subscription", href: "/dashboard/pricing" },
-      { icon: Code, labelKey: "nav.pixel", href: "/dashboard/pixel", adminOnly: true },
-    ]
-  }
+      {
+        icon: CreditCard,
+        labelKey: "nav.subscription",
+        href: "/dashboard/pricing",
+      },
+      {
+        icon: Code,
+        labelKey: "nav.pixel",
+        href: "/dashboard/pixel",
+        adminOnly: true,
+      },
+    ],
+  },
 ];
 
-const PLAN_HIERARCHY: SubscriptionPlan[] = [null, 'basic', 'professional', 'premium'];
+const PLAN_HIERARCHY: SubscriptionPlan[] = [
+  null,
+  "basic",
+  "professional",
+  "premium",
+];
 
-const hasAccess = (userPlan: SubscriptionPlan, requiredPlan: PremiumRequirement): boolean => {
+const hasAccess = (
+  userPlan: SubscriptionPlan,
+  requiredPlan: PremiumRequirement,
+): boolean => {
   const userIndex = PLAN_HIERARCHY.indexOf(userPlan);
   const requiredIndex = PLAN_HIERARCHY.indexOf(requiredPlan);
   return userIndex >= requiredIndex;
 };
 
-const getPlanBadge = (requiredPlan: PremiumRequirement, userPlan: SubscriptionPlan, isOpen: boolean) => {
+const getPlanBadge = (
+  requiredPlan: PremiumRequirement,
+  userPlan: SubscriptionPlan,
+  isOpen: boolean,
+) => {
   const hasAccessToFeature = hasAccess(userPlan, requiredPlan);
 
   if (hasAccessToFeature) return null;
@@ -113,7 +202,7 @@ const getPlanBadge = (requiredPlan: PremiumRequirement, userPlan: SubscriptionPl
       <Tooltip>
         <TooltipTrigger asChild>
           <div className="absolute -top-1 -right-1">
-            {requiredPlan === 'premium' ? (
+            {requiredPlan === "premium" ? (
               <Crown className="w-3 h-3 text-amber-500" />
             ) : (
               <Sparkles className="w-3 h-3 text-blue-500" />
@@ -121,7 +210,7 @@ const getPlanBadge = (requiredPlan: PremiumRequirement, userPlan: SubscriptionPl
           </div>
         </TooltipTrigger>
         <TooltipContent side="right">
-          <p>{requiredPlan === 'premium' ? 'Premium' : 'Professional'}</p>
+          <p>{requiredPlan === "premium" ? "Premium" : "Professional"}</p>
         </TooltipContent>
       </Tooltip>
     );
@@ -132,34 +221,50 @@ const getPlanBadge = (requiredPlan: PremiumRequirement, userPlan: SubscriptionPl
       variant="outline"
       className={cn(
         "ml-auto text-[10px] px-1.5 py-0 h-4",
-        requiredPlan === 'premium'
+        requiredPlan === "premium"
           ? "border-amber-500/50 text-amber-500 bg-amber-500/10"
-          : "border-blue-500/50 text-blue-500 bg-blue-500/10"
+          : "border-blue-500/50 text-blue-500 bg-blue-500/10",
       )}
     >
-      {requiredPlan === 'premium' ? (
+      {requiredPlan === "premium" ? (
         <Crown className="w-2.5 h-2.5 mr-0.5" />
       ) : (
         <Sparkles className="w-2.5 h-2.5 mr-0.5" />
       )}
-      {requiredPlan === 'premium' ? 'PRO' : 'PLUS'}
+      {requiredPlan === "premium" ? "PRO" : "PLUS"}
     </Badge>
   );
 };
 
 // Menu items for seller users
 const sellerMenuItems: MenuItem[] = [
-  { icon: LayoutDashboard, labelKey: "dashboard.myDashboard", href: "/dashboard/seller" },
+  {
+    icon: LayoutDashboard,
+    labelKey: "dashboard.myDashboard",
+    href: "/dashboard/seller",
+  },
   { icon: Trophy, labelKey: "nav.ranking", href: "/dashboard/ranking" },
-  { icon: MessageCircle, labelKey: "dashboard.myConversations", href: "/dashboard/conversations" },
+  {
+    icon: MessageCircle,
+    labelKey: "dashboard.myConversations",
+    href: "/dashboard/conversations",
+  },
   { icon: Users, labelKey: "dashboard.myLeads", href: "/dashboard/leads" },
   { icon: Bell, labelKey: "nav.alerts", href: "/dashboard/alerts" },
 ];
 
 // Menu items for member users (non-seller, non-admin)
 const memberMenuItems: MenuItem[] = [
-  { icon: LayoutDashboard, labelKey: "dashboard.myDashboard", href: "/dashboard" },
-  { icon: MessageCircle, labelKey: "dashboard.myConversations", href: "/dashboard/conversations" },
+  {
+    icon: LayoutDashboard,
+    labelKey: "dashboard.myDashboard",
+    href: "/dashboard",
+  },
+  {
+    icon: MessageCircle,
+    labelKey: "dashboard.myConversations",
+    href: "/dashboard/conversations",
+  },
   { icon: Users, labelKey: "dashboard.myLeads", href: "/dashboard/leads" },
   { icon: Target, labelKey: "nav.leadScoring", href: "/dashboard/scoring" },
   { icon: Bell, labelKey: "nav.alerts", href: "/dashboard/alerts" },
@@ -186,14 +291,14 @@ const DashboardSidebar = ({ isOpen, onToggle }: DashboardSidebarProps) => {
 
   const handleSignOut = async () => {
     await signOut();
-    navigate('/');
+    navigate("/");
   };
 
   return (
     <aside
       className={cn(
         "fixed top-0 left-0 h-full bg-sidebar border-r border-sidebar-border transition-all duration-300 z-40 flex flex-col",
-        isOpen ? "w-64" : "w-20"
+        isOpen ? "w-64" : "w-20",
       )}
     >
       {/* Logo */}
@@ -203,17 +308,21 @@ const DashboardSidebar = ({ isOpen, onToggle }: DashboardSidebarProps) => {
             <MessageCircle className="w-5 h-5 text-primary-foreground" />
           </div>
           {isOpen && (
-            <span className="text-lg font-bold text-sidebar-foreground">WhatsMetrics</span>
+            <span className="text-lg font-bold text-sidebar-foreground">
+              WhatsMetrics
+            </span>
           )}
         </Link>
         <button
           onClick={onToggle}
           className="p-1.5 rounded-lg hover:bg-sidebar-accent transition-colors"
         >
-          <ChevronLeft className={cn(
-            "w-4 h-4 text-sidebar-foreground transition-transform",
-            !isOpen && "rotate-180"
-          )} />
+          <ChevronLeft
+            className={cn(
+              "w-4 h-4 text-sidebar-foreground transition-transform",
+              !isOpen && "rotate-180",
+            )}
+          />
         </button>
       </div>
 
@@ -238,14 +347,19 @@ const DashboardSidebar = ({ isOpen, onToggle }: DashboardSidebarProps) => {
                 {section.title}
               </h3>
             )}
-            {!isOpen && idx > 0 && <div className="h-px bg-sidebar-border/50 mx-2 my-4" />}
+            {!isOpen && idx > 0 && (
+              <div className="h-px bg-sidebar-border/50 mx-2 my-4" />
+            )}
 
             {section.items.map((item) => {
               // Skip admin-only items for non-admin users
-              if ('adminOnly' in item && item.adminOnly && !isAdmin) return null;
+              if ("adminOnly" in item && item.adminOnly && !isAdmin)
+                return null;
 
               const isActive = location.pathname === item.href;
-              const premiumBadge = item.requiredPlan ? getPlanBadge(item.requiredPlan, plan, isOpen) : null;
+              const premiumBadge = item.requiredPlan
+                ? getPlanBadge(item.requiredPlan, plan, isOpen)
+                : null;
 
               return (
                 <Link
@@ -255,14 +369,18 @@ const DashboardSidebar = ({ isOpen, onToggle }: DashboardSidebarProps) => {
                     "flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 relative group",
                     isActive
                       ? "bg-primary text-white shadow-lg shadow-primary/20"
-                      : "text-sidebar-foreground hover:bg-sidebar-accent"
+                      : "text-sidebar-foreground hover:bg-sidebar-accent",
                   )}
                 >
                   <div className="relative">
-                    <item.icon className={cn(
-                      "w-4 h-4 flex-shrink-0",
-                      isActive ? "text-white" : "text-muted-foreground group-hover:text-primary transition-colors"
-                    )} />
+                    <item.icon
+                      className={cn(
+                        "w-4 h-4 flex-shrink-0",
+                        isActive
+                          ? "text-white"
+                          : "text-muted-foreground group-hover:text-primary transition-colors",
+                      )}
+                    />
                     {!isOpen && premiumBadge}
                   </div>
                   {isOpen && (
@@ -286,11 +404,14 @@ const DashboardSidebar = ({ isOpen, onToggle }: DashboardSidebarProps) => {
           to="/dashboard/profile"
           className={cn(
             "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent transition-colors",
-            location.pathname === "/dashboard/profile" && "bg-primary text-white shadow-lg shadow-primary/20"
+            location.pathname === "/dashboard/profile" &&
+              "bg-primary text-white shadow-lg shadow-primary/20",
           )}
         >
           <UserCircle className="w-5 h-5 flex-shrink-0" />
-          {isOpen && <span className="text-sm font-medium">{t('auth.profile')}</span>}
+          {isOpen && (
+            <span className="text-sm font-medium">{t("auth.profile")}</span>
+          )}
         </Link>
 
         {isAdmin && (
@@ -298,11 +419,14 @@ const DashboardSidebar = ({ isOpen, onToggle }: DashboardSidebarProps) => {
             to="/dashboard/settings"
             className={cn(
               "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent transition-colors",
-              location.pathname === "/dashboard/settings" && "bg-primary text-white shadow-lg shadow-primary/20"
+              location.pathname === "/dashboard/settings" &&
+                "bg-primary text-white shadow-lg shadow-primary/20",
             )}
           >
             <Settings className="w-5 h-5 flex-shrink-0" />
-            {isOpen && <span className="text-sm font-medium">{t('auth.settings')}</span>}
+            {isOpen && (
+              <span className="text-sm font-medium">{t("auth.settings")}</span>
+            )}
           </Link>
         )}
 
@@ -311,7 +435,9 @@ const DashboardSidebar = ({ isOpen, onToggle }: DashboardSidebarProps) => {
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
         >
           <LogOut className="w-5 h-5 flex-shrink-0" />
-          {isOpen && <span className="text-sm font-medium">{t('auth.logout')}</span>}
+          {isOpen && (
+            <span className="text-sm font-medium">{t("auth.logout")}</span>
+          )}
         </button>
       </div>
     </aside>
