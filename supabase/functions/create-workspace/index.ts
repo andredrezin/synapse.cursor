@@ -3,7 +3,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
 };
 
 interface CreateWorkspaceRequest {
@@ -18,16 +19,19 @@ serve(async (req: Request) => {
 
   try {
     console.log("create-workspace function called");
-    
+
     // Get auth token from header
     const authHeader = req.headers.get("Authorization");
     console.log("Auth header present:", !!authHeader);
-    
+
     if (!authHeader) {
       console.error("No authorization header provided");
       return new Response(
         JSON.stringify({ error: "No authorization header" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
       );
     }
 
@@ -43,7 +47,10 @@ serve(async (req: Request) => {
       console.error("Missing Supabase environment variables");
       return new Response(
         JSON.stringify({ error: "Server configuration error" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
       );
     }
 
@@ -54,15 +61,21 @@ serve(async (req: Request) => {
 
     // Create user client to verify the token - extract the token from Bearer
     const token = authHeader.replace("Bearer ", "");
-    
+
     // Verify the token by getting the user
-    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
+    const {
+      data: { user },
+      error: userError,
+    } = await supabaseAdmin.auth.getUser(token);
 
     if (userError || !user) {
       console.error("Failed to get user:", userError?.message);
       return new Response(
         JSON.stringify({ error: "Invalid token", details: userError?.message }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
       );
     }
 
@@ -74,10 +87,10 @@ serve(async (req: Request) => {
       body = await req.json();
     } catch (e) {
       console.error("Failed to parse request body:", e);
-      return new Response(
-        JSON.stringify({ error: "Invalid request body" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "Invalid request body" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const { name } = body;
@@ -85,24 +98,46 @@ serve(async (req: Request) => {
     if (!name || name.trim().length === 0) {
       return new Response(
         JSON.stringify({ error: "Workspace name is required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
       );
     }
 
     console.log("Creating workspace:", name, "for user:", user.id);
 
+    const slug =
+      name
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "") +
+      "-" +
+      Math.random().toString(36).substring(7);
+
     // Create the workspace using service role
     const { data: workspace, error: workspaceError } = await supabaseAdmin
       .from("workspaces")
-      .insert({ name: name.trim(), owner_id: user.id })
+      .insert({
+        name: name.trim(),
+        owner_id: user.id,
+        slug: slug,
+      })
       .select()
       .single();
 
     if (workspaceError) {
       console.error("Failed to create workspace:", workspaceError);
       return new Response(
-        JSON.stringify({ error: "Failed to create workspace", details: workspaceError.message }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({
+          error: "Failed to create workspace",
+          details: workspaceError.message,
+        }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
       );
     }
 
@@ -122,8 +157,14 @@ serve(async (req: Request) => {
       // Rollback workspace creation
       await supabaseAdmin.from("workspaces").delete().eq("id", workspace.id);
       return new Response(
-        JSON.stringify({ error: "Failed to create workspace member", details: memberError.message }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({
+          error: "Failed to create workspace member",
+          details: memberError.message,
+        }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
       );
     }
 
@@ -141,8 +182,14 @@ serve(async (req: Request) => {
     if (profileError) {
       console.error("Failed to update profile:", profileError);
       return new Response(
-        JSON.stringify({ error: "Failed to update profile", details: profileError.message }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({
+          error: "Failed to update profile",
+          details: profileError.message,
+        }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
       );
     }
 
@@ -157,13 +204,22 @@ serve(async (req: Request) => {
           created_at: workspace.created_at,
         },
       }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
     );
   } catch (error) {
     console.error("Unexpected error:", error);
     return new Response(
-      JSON.stringify({ error: "Internal server error", details: String(error) }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({
+        error: "Internal server error",
+        details: String(error),
+      }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
     );
   }
 });

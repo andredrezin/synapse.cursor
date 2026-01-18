@@ -181,3 +181,6 @@ Isso significa que em produção no Vercel, o tagger não será incluído.
 
 Após seguir este guia, você terá um frontend totalmente funcional no Vercel, independente do Lovable.
 
+
+
+

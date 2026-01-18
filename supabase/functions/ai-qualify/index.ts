@@ -2,18 +2,25 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
 };
 
-const log = (level: string, message: string, data?: Record<string, unknown>) => {
-  console.log(JSON.stringify({
-    timestamp: new Date().toISOString(),
-    level,
-    function: 'ai-qualify',
-    message,
-    ...(data && { data }),
-  }));
+const log = (
+  level: string,
+  message: string,
+  data?: Record<string, unknown>
+) => {
+  console.log(
+    JSON.stringify({
+      timestamp: new Date().toISOString(),
+      level,
+      function: "ai-qualify",
+      message,
+      ...(data && { data }),
+    })
+  );
 };
 
 interface QualifyRequest {
@@ -25,8 +32,8 @@ interface QualifyRequest {
 
 interface QualificationResult {
   score: number;
-  temperature: 'cold' | 'warm' | 'hot';
-  buying_intent: 'none' | 'low' | 'medium' | 'high';
+  temperature: "cold" | "warm" | "hot";
+  buying_intent: "none" | "low" | "medium" | "high";
   objections: string[];
   recommended_actions: string[];
   reasoning: string;
@@ -66,22 +73,26 @@ FATORES QUE DIMINUEM SCORE:
 CONVERSA:
 `;
 
-// Call Lovable AI for qualification
-const qualifyWithLovableAI = async (apiKey: string, conversationText: string): Promise<QualificationResult> => {
-  const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-    method: 'POST',
+// Call OpenAI for qualification
+const qualifyWithOpenAI = async (
+  apiKey: string,
+  conversationText: string
+): Promise<QualificationResult> => {
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
     headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: 'google/gemini-2.5-flash-lite', // Fast model for classification
+      model: "gpt-4o-mini", // Cost-effective model for classification
       messages: [
-        { 
-          role: 'system', 
-          content: 'Você é um especialista em qualificação de leads de vendas. Analise conversas e atribua scores precisos. Responda em JSON.' 
+        {
+          role: "system",
+          content:
+            "Você é um especialista em qualificação de leads de vendas. Analise conversas e atribua scores precisos. Responda em JSON.",
         },
-        { role: 'user', content: qualificationPrompt + conversationText },
+        { role: "user", content: qualificationPrompt + conversationText },
       ],
       max_tokens: 600,
       temperature: 0.2,
@@ -90,51 +101,48 @@ const qualifyWithLovableAI = async (apiKey: string, conversationText: string): P
 
   if (!response.ok) {
     if (response.status === 429) {
-      throw new Error('Rate limit exceeded');
-    }
-    if (response.status === 402) {
-      throw new Error('AI credits exhausted');
+      throw new Error("OpenAI Rate limit exceeded");
     }
     const error = await response.text();
-    throw new Error(`AI Gateway error: ${error}`);
+    throw new Error(`OpenAI API error: ${error}`);
   }
 
   const data = await response.json();
   const content = data.choices[0].message.content;
-  
+
   // Parse JSON from response
   let jsonStr = content;
-  if (content.includes('```json')) {
-    jsonStr = content.split('```json')[1].split('```')[0].trim();
-  } else if (content.includes('```')) {
-    jsonStr = content.split('```')[1].split('```')[0].trim();
+  if (content.includes("```json")) {
+    jsonStr = content.split("```json")[1].split("```")[0].trim();
+  } else if (content.includes("```")) {
+    jsonStr = content.split("```")[1].split("```")[0].trim();
   }
-  
+
   return JSON.parse(jsonStr);
 };
 
 serve(async (req) => {
   const requestId = crypto.randomUUID().slice(0, 8);
 
-  if (req.method === 'OPTIONS') {
+  if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    log('INFO', `[${requestId}] AI Qualify request received`);
+    log("INFO", `[${requestId}] AI Qualify request received`);
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const openAiApiKey = Deno.env.get("OPENAI_API_KEY");
 
-    if (!lovableApiKey) {
-      throw new Error('LOVABLE_API_KEY not configured');
+    if (!openAiApiKey) {
+      throw new Error("OPENAI_API_KEY not configured");
     }
 
     const supabase = createClient(supabaseUrl, supabaseKey);
     const body: QualifyRequest = await req.json();
 
-    log('INFO', `[${requestId}] Qualifying lead`, {
+    log("INFO", `[${requestId}] Qualifying lead`, {
       workspace_id: body.workspace_id,
       lead_id: body.lead_id,
       conversation_id: body.conversation_id,
@@ -144,41 +152,41 @@ serve(async (req) => {
     let messages = body.messages;
     if (!messages && body.conversation_id) {
       const { data: dbMessages } = await supabase
-        .from('messages')
-        .select('content, sender_type')
-        .eq('conversation_id', body.conversation_id)
-        .order('created_at', { ascending: true });
-      
+        .from("messages")
+        .select("content, sender_type")
+        .eq("conversation_id", body.conversation_id)
+        .order("created_at", { ascending: true });
+
       messages = dbMessages || [];
     }
 
     if (!messages || messages.length === 0) {
-      log('WARN', `[${requestId}] No messages to qualify`);
+      log("WARN", `[${requestId}] No messages to qualify`);
       return new Response(
         JSON.stringify({
           success: true,
           qualification: {
             score: 0,
-            temperature: 'cold',
-            buying_intent: 'none',
+            temperature: "cold",
+            buying_intent: "none",
             objections: [],
-            recommended_actions: ['Iniciar conversa para entender interesse'],
-            reasoning: 'Sem mensagens para analisar',
+            recommended_actions: ["Iniciar conversa para entender interesse"],
+            reasoning: "Sem mensagens para analisar",
           },
         }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     // Get current lead info
     const { data: lead } = await supabase
-      .from('leads')
-      .select('name, source, created_at')
-      .eq('id', body.lead_id)
+      .from("leads")
+      .select("name, source, created_at")
+      .eq("id", body.lead_id)
       .single();
 
     // Format conversation
-    let conversationText = '';
+    let conversationText = "";
     if (lead) {
       conversationText += `INFO DO LEAD:
 - Nome: ${lead.name}
@@ -189,14 +197,20 @@ serve(async (req) => {
     }
 
     conversationText += messages
-      .map(m => `[${m.sender_type === 'lead' ? 'Lead' : 'Vendedor'}]: ${m.content}`)
-      .join('\n');
+      .map(
+        (m) =>
+          `[${m.sender_type === "lead" ? "Lead" : "Vendedor"}]: ${m.content}`
+      )
+      .join("\n");
 
     // Perform qualification
-    log('INFO', `[${requestId}] Calling Lovable AI for qualification`);
-    const qualification = await qualifyWithLovableAI(lovableApiKey, conversationText);
+    log("INFO", `[${requestId}] Calling OpenAI for qualification`);
+    const qualification = await qualifyWithOpenAI(
+      openAiApiKey,
+      conversationText
+    );
 
-    log('INFO', `[${requestId}] Qualification complete`, {
+    log("INFO", `[${requestId}] Qualification complete`, {
       score: qualification.score,
       temperature: qualification.temperature,
       buyingIntent: qualification.buying_intent,
@@ -204,33 +218,33 @@ serve(async (req) => {
 
     // Update lead with qualification
     const { error: updateError } = await supabase
-      .from('leads')
+      .from("leads")
       .update({
         score: qualification.score,
         temperature: qualification.temperature,
         objections: qualification.objections,
         updated_at: new Date().toISOString(),
       })
-      .eq('id', body.lead_id);
+      .eq("id", body.lead_id);
 
     if (updateError) {
-      log('WARN', `[${requestId}] Error updating lead`, { error: updateError.message });
+      log("WARN", `[${requestId}] Error updating lead`, {
+        error: updateError.message,
+      });
     }
 
     // Create notification if lead is hot
-    if (qualification.temperature === 'hot' && qualification.score >= 70) {
-      await supabase
-        .from('notifications')
-        .insert({
-          workspace_id: body.workspace_id,
-          title: `🔥 Lead Quente: ${lead?.name || 'Lead'}`,
-          description: `Score ${qualification.score}/100 - ${qualification.reasoning}`,
-          type: 'hot_lead',
-          priority: 'high',
-          lead_id: body.lead_id,
-        });
-      
-      log('INFO', `[${requestId}] Hot lead notification created`);
+    if (qualification.temperature === "hot" && qualification.score >= 70) {
+      await supabase.from("notifications").insert({
+        workspace_id: body.workspace_id,
+        title: `🔥 Lead Quente: ${lead?.name || "Lead"}`,
+        description: `Score ${qualification.score}/100 - ${qualification.reasoning}`,
+        type: "hot_lead",
+        priority: "high",
+        lead_id: body.lead_id,
+      });
+
+      log("INFO", `[${requestId}] Hot lead notification created`);
     }
 
     return new Response(
@@ -238,20 +252,22 @@ serve(async (req) => {
         success: true,
         qualification,
       }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
-
   } catch (error) {
-    log('ERROR', `[${requestId}] Unhandled error`, {
+    log("ERROR", `[${requestId}] Unhandled error`, {
       error: error instanceof Error ? error.message : String(error),
     });
 
     return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+      JSON.stringify({
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
       }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
     );
   }
 });

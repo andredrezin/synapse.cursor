@@ -1,4 +1,4 @@
-project_id = "bhaaunojqtxbfkrpgdix"
+project_id = "aktwyjsfvydxaaipedyb"
 
 [functions.create-workspace]
 verify_jwt = false

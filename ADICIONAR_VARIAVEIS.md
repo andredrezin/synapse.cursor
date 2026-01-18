@@ -76,3 +76,6 @@ console.log('Supabase Key:', import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ? '�
 
 Se aparecer `undefined`, as variáveis não foram configuradas corretamente.
 
+
+
+

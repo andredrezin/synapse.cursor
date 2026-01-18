@@ -100,3 +100,6 @@ Se aparecer `undefined`, as variáveis não foram configuradas corretamente.
 
 **Recomendação:** Use a **Opção 1 (Dashboard)** - é mais visual e fácil de verificar enquanto digita!
 
+
+
+

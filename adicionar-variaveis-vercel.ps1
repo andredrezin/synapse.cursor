@@ -60,3 +60,6 @@ Write-Host "   VITE_SUPABASE_PUBLISHABLE_KEY = $supabaseAnonKey" -ForegroundColo
 Write-Host ""
 Write-Host "✅ Após adicionar, faça um novo deploy!" -ForegroundColor Green
 
+
+
+

@@ -1,0 +1,132 @@
+[
+  {
+    "id": "e4f5092a-3642-4a0b-9993-47123958661c",
+    "name": "1. Embedding da Pergunta",
+    "type": "@n8n/n8n-nodes-langchain.openAi",
+    "position": [780, 1300],
+    "parameters": {
+      "model": "text-embedding-3-small",
+      "resource": "embedding",
+      "text": "={{ $json.mensagem }}"
+    },
+    "credentials": {
+      "openAiApi": { "id": "kUgyGIADzm22E5Ls", "name": "OpenAi account" }
+    }
+  },
+  {
+    "id": "a1b2c3d4-e5f6-4789-8012-34567890abcdef",
+    "name": "2. Buscar FAQ (match_knowledge)",
+    "type": "n8n-nodes-base.httpRequest",
+    "position": [1000, 1300],
+    "parameters": {
+      "method": "POST",
+      "url": "https://aktwyjsfvydxaaipedyb.supabase.co/rest/v1/rpc/match_knowledge",
+      "sendHeaders": true,
+      "headerParameters": {
+        "parameters": [
+          { "name": "apikey", "value": "SUA_CHAVE_ANON_AQUI" },
+          { "name": "Content-Type", "value": "application/json" }
+        ]
+      },
+      "sendBody": true,
+      "specifyBody": "json",
+      "jsonBody": "={\n  \"query_embedding\": {{ JSON.stringify($node['1. Embedding da Pergunta'].json.data[0].embedding) }},\n  \"match_threshold\": 0.5,\n  \"match_count\": 5,\n  \"p_workspace_id\": \"={{ $('05 - Buscar Workspace').item.json.id }}\"\n}\n"
+    }
+  },
+  {
+    "id": "b1a2c3d4-e5f6-4789-8012-123456789abc",
+    "name": "3. Buscar Experiência (match_sales_experience)",
+    "type": "n8n-nodes-base.httpRequest",
+    "position": [1000, 1500],
+    "parameters": {
+      "method": "POST",
+      "url": "https://aktwyjsfvydxaaipedyb.supabase.co/rest/v1/rpc/match_sales_experience",
+      "sendHeaders": true,
+      "headerParameters": {
+        "parameters": [
+          { "name": "apikey", "value": "SUA_CHAVE_ANON_AQUI" },
+          { "name": "Content-Type", "value": "application/json" }
+        ]
+      },
+      "sendBody": true,
+      "specifyBody": "json",
+      "jsonBody": "={\n  \"query_embedding\": {{ JSON.stringify($node['1. Embedding da Pergunta'].json.data[0].embedding) }},\n  \"match_threshold\": 0.6,\n  \"match_count\": 3,\n  \"p_workspace_id\": \"={{ $('05 - Buscar Workspace').item.json.id }}\"\n}\n"
+    }
+  },
+  {
+    "id": "c1d2e3f4-g5h6-4789-8012-987654321zyx",
+    "name": "4. Formatar FAQ",
+    "type": "n8n-nodes-base.code",
+    "position": [1220, 1300],
+    "parameters": {
+      "jsCode": "const rows = $input.all().filter(i=>i.json.content).map(i=>`[FAQ] ${i.json.content}`).join('\\n');\nreturn { json:{ faq_context: rows || 'Nenhum FAQ relevante.' } };"
+    }
+  },
+  {
+    "id": "d1e2f3g4-h5i6-4789-8012-abcdef123456",
+    "name": "5. Formatar Experiência",
+    "type": "n8n-nodes-base.code",
+    "position": [1220, 1500],
+    "parameters": {
+      "jsCode": "const rows = $input.all().filter(i=>i.json.action_text).map(i=>`[DICA] ${i.json.context_text} → ${i.json.action_text} (técnica: ${i.json.technique_name||'-'})`).join('\\n');\nreturn { json:{ experience_context: rows || 'Sem experiência similar.' } };"
+    }
+  },
+  {
+    "id": "e1f2g3h4-i5j6-4789-8012-merge123",
+    "name": "6. Merge Contextos",
+    "type": "n8n-nodes-base.merge",
+    "position": [1440, 1400],
+    "parameters": { "mode": "append", "keepOnlySet": false }
+  },
+  {
+    "id": "f1g2h3i4-j5k6-4789-8012-finalctx",
+    "name": "7. Formatar Prompt Final",
+    "type": "n8n-nodes-base.code",
+    "position": [1660, 1400],
+    "parameters": {
+      "jsCode": "const faq = $node['4. Formatar FAQ'].json.faq_context;\nconst exp = $node['5. Formatar Experiência'].json.experience_context;\nreturn { json:{\n  system_prompt: $node['Buscar Configs IA'].json.system_prompt,\n  user_prompt: `Contexto do Lead: ${$node['Formatar Contexto1'].json.chat_history}\\n\\nFAQ Relevante:\\n${faq}\\n\\nExperiências de Vendas que já funcionaram:\\n${exp}\\n\\nPergunta do cliente: ${$node['02 - Extrair Dados'].item.json.mensagem}`\n}};"
+    }
+  },
+  {
+    "id": "openai_chat_rag",
+    "name": "OpenAI Chat Model RAG",
+    "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+    "position": [1880, 1400],
+    "parameters": {
+      "model": { "value": "gpt-4.1-mini", "mode": "list" },
+      "messages": {
+        "messageValues": [
+          {
+            "role": "system",
+            "message": "{{ $node['7. Formatar Prompt Final'].json.system_prompt }}"
+          },
+          {
+            "role": "user",
+            "message": "{{ $node['7. Formatar Prompt Final'].json.user_prompt }}"
+          }
+        ]
+      }
+    },
+    "credentials": {
+      "openAiApi": { "id": "kUgyGIADzm22E5Ls", "name": "OpenAi account" }
+    }
+  },
+  {
+    "id": "set_payload_rag",
+    "name": "Atualizar Payload da Fila",
+    "type": "n8n-nodes-base.set",
+    "position": [2100, 1400],
+    "parameters": {
+      "assignments": {
+        "assignments": [
+          {
+            "id": "payload_text",
+            "name": "payload",
+            "value": "={{ { texto: $node['OpenAI Chat Model RAG'].json.output, telefone: $node['02 - Extrair Dados'].item.json.telefone, instancia: $node['02 - Extrair Dados'].item.json.instancia } }",
+            "type": "json"
+          }
+        ]
+      }
+    }
+  }
+]

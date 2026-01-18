@@ -39,3 +39,6 @@ echo "✅ Variáveis adicionadas!"
 echo "⚠️  IMPORTANTE: Faça um novo deploy para aplicar as mudanças!"
 echo "   Execute: vercel --prod"
 
+
+
+

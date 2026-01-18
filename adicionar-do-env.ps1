@@ -82,3 +82,6 @@ Write-Host ""
 Write-Host "💡 Faça um novo deploy para aplicar as mudanças:" -ForegroundColor Yellow
 Write-Host "   vercel --prod" -ForegroundColor White
 
+
+
+

@@ -2,18 +2,25 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
 };
 
-const log = (level: string, message: string, data?: Record<string, unknown>) => {
-  console.log(JSON.stringify({
-    timestamp: new Date().toISOString(),
-    level,
-    function: 'ai-analyze',
-    message,
-    ...(data && { data }),
-  }));
+const log = (
+  level: string,
+  message: string,
+  data?: Record<string, unknown>
+) => {
+  console.log(
+    JSON.stringify({
+      timestamp: new Date().toISOString(),
+      level,
+      function: "ai-analyze",
+      message,
+      ...(data && { data }),
+    })
+  );
 };
 
 interface AnalyzeRequest {
@@ -25,7 +32,7 @@ interface AnalyzeRequest {
 }
 
 interface AnalysisResult {
-  sentiment: 'positive' | 'neutral' | 'negative';
+  sentiment: "positive" | "neutral" | "negative";
   sentiment_score: number; // -1 to 1
   intent: string;
   topics: string[];
@@ -34,7 +41,7 @@ interface AnalysisResult {
   mentioned_products: string[];
   mentioned_services: string[];
   is_resolved: boolean;
-  urgency: 'low' | 'medium' | 'high';
+  urgency: "low" | "medium" | "high";
   buying_signals: string[];
   objections: string[];
 }
@@ -76,23 +83,27 @@ const quickSentimentPrompt = `Analise APENAS o sentimento desta mensagem e retor
 MENSAGEM:
 `;
 
-// Call Lovable AI for analysis
-const analyzeWithLovableAI = async (
-  apiKey: string, 
+// Call OpenAI for analysis
+const analyzeWithOpenAI = async (
+  apiKey: string,
   prompt: string,
   messages: string
 ): Promise<AnalysisResult | Partial<AnalysisResult>> => {
-  const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-    method: 'POST',
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
     headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: 'google/gemini-2.5-flash-lite', // Fast model for analysis
+      model: "gpt-4o-mini", // Cost-effective model for analysis
       messages: [
-        { role: 'system', content: 'Você é um analisador de conversas de vendas. Responda sempre em JSON válido.' },
-        { role: 'user', content: prompt + messages },
+        {
+          role: "system",
+          content:
+            "Você é um analisador de conversas de vendas. Responda sempre em JSON válido.",
+        },
+        { role: "user", content: prompt + messages },
       ],
       max_tokens: 800,
       temperature: 0.2,
@@ -101,51 +112,48 @@ const analyzeWithLovableAI = async (
 
   if (!response.ok) {
     if (response.status === 429) {
-      throw new Error('Rate limit exceeded');
-    }
-    if (response.status === 402) {
-      throw new Error('AI credits exhausted');
+      throw new Error("OpenAI Rate limit exceeded");
     }
     const error = await response.text();
-    throw new Error(`AI Gateway error: ${error}`);
+    throw new Error(`OpenAI API error: ${error}`);
   }
 
   const data = await response.json();
   const content = data.choices[0].message.content;
-  
+
   // Parse JSON from response (handle markdown code blocks)
   let jsonStr = content;
-  if (content.includes('```json')) {
-    jsonStr = content.split('```json')[1].split('```')[0].trim();
-  } else if (content.includes('```')) {
-    jsonStr = content.split('```')[1].split('```')[0].trim();
+  if (content.includes("```json")) {
+    jsonStr = content.split("```json")[1].split("```")[0].trim();
+  } else if (content.includes("```")) {
+    jsonStr = content.split("```")[1].split("```")[0].trim();
   }
-  
+
   return JSON.parse(jsonStr);
 };
 
 serve(async (req) => {
   const requestId = crypto.randomUUID().slice(0, 8);
 
-  if (req.method === 'OPTIONS') {
+  if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    log('INFO', `[${requestId}] AI Analyze request received`);
+    log("INFO", `[${requestId}] AI Analyze request received`);
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const openAiApiKey = Deno.env.get("OPENAI_API_KEY");
 
-    if (!lovableApiKey) {
-      throw new Error('LOVABLE_API_KEY is not configured');
+    if (!openAiApiKey) {
+      throw new Error("OPENAI_API_KEY is not configured");
     }
 
     const supabase = createClient(supabaseUrl, supabaseKey);
     const body: AnalyzeRequest = await req.json();
 
-    log('INFO', `[${requestId}] Analyzing conversation`, {
+    log("INFO", `[${requestId}] Analyzing conversation`, {
       workspace_id: body.workspace_id,
       conversation_id: body.conversation_id,
       messagesCount: body.messages?.length || 0,
@@ -154,25 +162,30 @@ serve(async (req) => {
 
     // Format messages for analysis
     const formattedMessages = body.messages
-      .map(m => `[${m.sender_type}]: ${m.content}`)
-      .join('\n');
+      .map((m) => `[${m.sender_type}]: ${m.content}`)
+      .join("\n");
 
     // Perform analysis (quick for realtime, full otherwise)
     let analysis: AnalysisResult | Partial<AnalysisResult>;
-    
+
     if (body.realtime) {
       // Quick sentiment analysis for real-time
       const lastMessage = body.messages[body.messages.length - 1];
-      analysis = await analyzeWithLovableAI(
-        lovableApiKey, 
+      analysis = await analyzeWithOpenAI(
+        openAiApiKey,
         quickSentimentPrompt,
         `[${lastMessage.sender_type}]: ${lastMessage.content}`
       );
-      log('DEBUG', `[${requestId}] Quick sentiment analysis complete`);
+      log("DEBUG", `[${requestId}] Quick sentiment analysis complete`);
     } else {
       // Full analysis
-      analysis = await analyzeWithLovableAI(lovableApiKey, analysisPrompt, formattedMessages);
-      log('INFO', `[${requestId}] Full analysis complete`, {
+      // Full analysis
+      analysis = await analyzeWithOpenAI(
+        openAiApiKey,
+        analysisPrompt,
+        formattedMessages
+      );
+      log("INFO", `[${requestId}] Full analysis complete`, {
         sentiment: analysis.sentiment,
         intent: (analysis as AnalysisResult).intent,
         urgency: analysis.urgency,
@@ -182,11 +195,11 @@ serve(async (req) => {
     // Update or insert conversation context (skip for realtime quick analysis)
     if (!body.realtime) {
       const fullAnalysis = analysis as AnalysisResult;
-      
+
       const { data: existingContext } = await supabase
-        .from('conversation_context')
-        .select('id')
-        .eq('conversation_id', body.conversation_id)
+        .from("conversation_context")
+        .select("id")
+        .eq("conversation_id", body.conversation_id)
         .single();
 
       const contextData = {
@@ -206,45 +219,43 @@ serve(async (req) => {
 
       if (existingContext) {
         await supabase
-          .from('conversation_context')
+          .from("conversation_context")
           .update(contextData)
-          .eq('id', existingContext.id);
+          .eq("id", existingContext.id);
       } else {
-        await supabase
-          .from('conversation_context')
-          .insert(contextData);
+        await supabase.from("conversation_context").insert(contextData);
       }
 
       // Update lead with objections if found
       if (fullAnalysis.objections && fullAnalysis.objections.length > 0) {
         await supabase
-          .from('leads')
-          .update({ 
+          .from("leads")
+          .update({
             objections: fullAnalysis.objections,
             updated_at: new Date().toISOString(),
           })
-          .eq('id', body.lead_id);
+          .eq("id", body.lead_id);
       }
     }
 
     // Always update conversation and lead sentiment
     await supabase
-      .from('conversations')
-      .update({ 
+      .from("conversations")
+      .update({
         sentiment: analysis.sentiment,
         updated_at: new Date().toISOString(),
       })
-      .eq('id', body.conversation_id);
+      .eq("id", body.conversation_id);
 
     await supabase
-      .from('leads')
-      .update({ 
+      .from("leads")
+      .update({
         sentiment: analysis.sentiment,
         updated_at: new Date().toISOString(),
       })
-      .eq('id', body.lead_id);
+      .eq("id", body.lead_id);
 
-    log('INFO', `[${requestId}] Database updated successfully`);
+    log("INFO", `[${requestId}] Database updated successfully`);
 
     return new Response(
       JSON.stringify({
@@ -252,21 +263,23 @@ serve(async (req) => {
         analysis,
         realtime: body.realtime,
       }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
-
   } catch (error) {
-    log('ERROR', `[${requestId}] Unhandled error`, {
+    log("ERROR", `[${requestId}] Unhandled error`, {
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
     });
 
     return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+      JSON.stringify({
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
       }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
     );
   }
 });

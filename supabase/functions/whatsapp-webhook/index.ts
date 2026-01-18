@@ -3,7 +3,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
 };
 
 interface EvolutionMessage {
@@ -91,9 +92,26 @@ interface OfficialWebhook {
 }
 
 // Structured logging helper
-function log(level: "INFO" | "WARN" | "ERROR" | "DEBUG", message: string, data?: any) {
+function log(
+  level: "INFO" | "WARN" | "ERROR" | "DEBUG",
+  message: string,
+  data?: any
+) {
+  const logLevel = Deno.env.get("LOG_LEVEL") || "INFO";
+  const levels = ["DEBUG", "INFO", "WARN", "ERROR"];
+
+  if (levels.indexOf(level) < levels.indexOf(logLevel)) {
+    return;
+  }
+
   const timestamp = new Date().toISOString();
-  const logEntry = { timestamp, level, function: "whatsapp-webhook", message, ...(data && { data }) };
+  const logEntry = {
+    timestamp,
+    level,
+    function: "whatsapp-webhook",
+    message,
+    ...(data && { data }),
+  };
   console.log(JSON.stringify(logEntry));
 }
 
@@ -114,14 +132,21 @@ async function transcribeAudio(
     // First, download the audio file
     const audioResponse = await fetch(audioUrl);
     if (!audioResponse.ok) {
-      log("ERROR", `[${requestId}] Failed to download audio`, { status: audioResponse.status });
+      log("ERROR", `[${requestId}] Failed to download audio`, {
+        status: audioResponse.status,
+      });
       return "";
     }
 
     const audioBuffer = await audioResponse.arrayBuffer();
-    const base64Audio = btoa(String.fromCharCode(...new Uint8Array(audioBuffer)));
+    const base64Audio = btoa(
+      String.fromCharCode(...new Uint8Array(audioBuffer))
+    );
 
-    log("DEBUG", `[${requestId}] Audio downloaded`, { size: audioBuffer.byteLength, mimeType });
+    log("DEBUG", `[${requestId}] Audio downloaded`, {
+      size: audioBuffer.byteLength,
+      mimeType,
+    });
 
     // Call our transcribe-audio function
     const transcribeUrl = `${supabaseUrl}/functions/v1/transcribe-audio`;
@@ -129,7 +154,7 @@ async function transcribeAudio(
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${supabaseKey}`,
+        Authorization: `Bearer ${supabaseKey}`,
       },
       body: JSON.stringify({
         audio: base64Audio,
@@ -139,14 +164,18 @@ async function transcribeAudio(
 
     const data = await response.json();
     if (data.success && data.text) {
-      log("INFO", `[${requestId}] Audio transcribed successfully`, { textLength: data.text.length });
+      log("INFO", `[${requestId}] Audio transcribed successfully`, {
+        textLength: data.text.length,
+      });
       return data.text;
     }
 
     log("WARN", `[${requestId}] Transcription failed`, { error: data.error });
     return "";
   } catch (error: any) {
-    log("ERROR", `[${requestId}] Transcription error`, { error: error.message });
+    log("ERROR", `[${requestId}] Transcription error`, {
+      error: error.message,
+    });
     return "";
   }
 }
@@ -172,7 +201,7 @@ async function analyzeImage(
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${supabaseKey}`,
+        Authorization: `Bearer ${supabaseKey}`,
       },
       body: JSON.stringify({
         imageUrl,
@@ -183,14 +212,18 @@ async function analyzeImage(
 
     const data = await response.json();
     if (data.success && data.description) {
-      log("INFO", `[${requestId}] Image analyzed successfully`, { descriptionLength: data.description.length });
+      log("INFO", `[${requestId}] Image analyzed successfully`, {
+        descriptionLength: data.description.length,
+      });
       return data.description;
     }
 
     log("WARN", `[${requestId}] Image analysis failed`, { error: data.error });
     return "Não foi possível analisar a imagem";
   } catch (error: any) {
-    log("ERROR", `[${requestId}] Image analysis error`, { error: error.message });
+    log("ERROR", `[${requestId}] Image analysis error`, {
+      error: error.message,
+    });
     return "Erro ao analisar imagem";
   }
 }
@@ -205,7 +238,11 @@ serve(async (req) => {
     const token = url.searchParams.get("hub.verify_token");
     const challenge = url.searchParams.get("hub.challenge");
 
-    log("INFO", `[${requestId}] Webhook verification request`, { mode, hasToken: !!token, hasChallenge: !!challenge });
+    log("INFO", `[${requestId}] Webhook verification request`, {
+      mode,
+      hasToken: !!token,
+      hasChallenge: !!challenge,
+    });
 
     if (mode === "subscribe" && challenge) {
       log("INFO", `[${requestId}] Webhook verified successfully`);
@@ -229,39 +266,71 @@ serve(async (req) => {
       bodyType: body.event ? "evolution" : body.object ? "official" : "unknown",
       event: body.event,
       instance: body.instance,
-      object: body.object
+      object: body.object,
     });
-    log("DEBUG", `[${requestId}] Full webhook payload`, { body: JSON.stringify(body) });
+    log("DEBUG", `[${requestId}] Full webhook payload`, {
+      body: JSON.stringify(body),
+    });
 
     // Detect webhook type
     if (body.event && body.instance) {
-      log("INFO", `[${requestId}] Processing Evolution API webhook`, { event: body.event, instance: body.instance });
-      await handleEvolutionWebhook(supabase, supabaseUrl, supabaseKey, body as EvolutionWebhook, requestId);
+      log("INFO", `[${requestId}] Processing Evolution API webhook`, {
+        event: body.event,
+        instance: body.instance,
+      });
+      await handleEvolutionWebhook(
+        supabase,
+        supabaseUrl,
+        supabaseKey,
+        body as EvolutionWebhook,
+        requestId
+      );
     } else if (body.object === "whatsapp_business_account") {
       log("INFO", `[${requestId}] Processing Official WhatsApp API webhook`);
-      await handleOfficialWebhook(supabase, supabaseUrl, supabaseKey, body as OfficialWebhook, requestId);
+      await handleOfficialWebhook(
+        supabase,
+        supabaseUrl,
+        supabaseKey,
+        body as OfficialWebhook,
+        requestId
+      );
     } else {
-      log("WARN", `[${requestId}] Unknown webhook format`, { bodyKeys: Object.keys(body) });
+      log("WARN", `[${requestId}] Unknown webhook format`, {
+        bodyKeys: Object.keys(body),
+      });
     }
 
-    return new Response(
-      JSON.stringify({ success: true }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-
+    return new Response(JSON.stringify({ success: true }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (error: any) {
-    log("ERROR", `[${requestId}] Webhook processing error`, { error: error.message, stack: error.stack });
+    log("ERROR", `[${requestId}] Webhook processing error`, {
+      error: error.message,
+      stack: error.stack,
+    });
     // Always return 200 to prevent webhook retries
     return new Response(
       JSON.stringify({ success: false, error: error.message }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
     );
   }
 });
 
-async function handleEvolutionWebhook(supabase: any, supabaseUrl: string, supabaseKey: string, webhook: EvolutionWebhook, requestId: string) {
+async function handleEvolutionWebhook(
+  supabase: any,
+  supabaseUrl: string,
+  supabaseKey: string,
+  webhook: EvolutionWebhook,
+  requestId: string
+) {
   const { event, instance, data } = webhook;
-  log("DEBUG", `[${requestId}] Evolution event processing`, { event, instance });
+  log("DEBUG", `[${requestId}] Evolution event processing`, {
+    event,
+    instance,
+  });
 
   // Find connection by instance name
   const { data: connection, error: connError } = await supabase
@@ -271,14 +340,20 @@ async function handleEvolutionWebhook(supabase: any, supabaseUrl: string, supaba
     .single();
 
   if (connError || !connection) {
-    log("ERROR", `[${requestId}] Connection not found for instance`, { instance, error: connError?.message });
+    log("ERROR", `[${requestId}] Connection not found for instance`, {
+      instance,
+      error: connError?.message,
+    });
     return;
   }
 
-  log("DEBUG", `[${requestId}] Connection found`, { connectionId: connection.id, workspace_id: connection.workspace_id });
+  log("DEBUG", `[${requestId}] Connection found`, {
+    connectionId: connection.id,
+    workspace_id: connection.workspace_id,
+  });
 
   switch (event) {
-    case "CONNECTION_UPDATE":
+    case "CONNECTION_UPDATE": {
       const state = data?.state || data?.status;
       let newStatus = "disconnected";
 
@@ -294,7 +369,7 @@ async function handleEvolutionWebhook(supabase: any, supabaseUrl: string, supaba
         connectionId: connection.id,
         previousStatus: connection.status,
         newStatus,
-        state
+        state,
       });
 
       await supabase
@@ -314,10 +389,14 @@ async function handleEvolutionWebhook(supabase: any, supabaseUrl: string, supaba
       });
 
       break;
+    }
 
-    case "QRCODE_UPDATED":
+    case "QRCODE_UPDATED": {
       const qrCode = data?.qrcode?.base64 || data?.base64;
-      log("INFO", `[${requestId}] QR code update`, { connectionId: connection.id, hasQrCode: !!qrCode });
+      log("INFO", `[${requestId}] QR code update`, {
+        connectionId: connection.id,
+        hasQrCode: !!qrCode,
+      });
 
       if (qrCode) {
         await supabase
@@ -329,37 +408,64 @@ async function handleEvolutionWebhook(supabase: any, supabaseUrl: string, supaba
           .eq("id", connection.id);
       }
       break;
+    }
 
-    case "MESSAGES_UPSERT":
+    case "MESSAGES_UPSERT": {
       const messages = Array.isArray(data) ? data : [data];
-      log("INFO", `[${requestId}] Messages received`, { connectionId: connection.id, messageCount: messages.length });
+      log("INFO", `[${requestId}] Messages received`, {
+        connectionId: connection.id,
+        messageCount: messages.length,
+      });
 
       for (const msgData of messages) {
-        await processIncomingMessage(supabase, supabaseUrl, supabaseKey, connection, msgData, requestId);
+        await processIncomingMessage(
+          supabase,
+          supabaseUrl,
+          supabaseKey,
+          connection,
+          msgData,
+          requestId
+        );
       }
       break;
+    }
 
-    case "MESSAGES_UPDATE":
-      log("DEBUG", `[${requestId}] Message status update`, { connectionId: connection.id, data });
+    case "MESSAGES_UPDATE": {
+      log("DEBUG", `[${requestId}] Message status update`, {
+        connectionId: connection.id,
+        data,
+      });
       break;
+    }
 
     default:
       log("DEBUG", `[${requestId}] Unhandled Evolution event`, { event });
   }
 }
 
-async function handleOfficialWebhook(supabase: any, supabaseUrl: string, supabaseKey: string, webhook: OfficialWebhook, requestId: string) {
+async function handleOfficialWebhook(
+  supabase: any,
+  supabaseUrl: string,
+  supabaseKey: string,
+  webhook: OfficialWebhook,
+  requestId: string
+) {
   for (const entry of webhook.entry) {
     for (const change of entry.changes) {
       if (change.field !== "messages") {
-        log("DEBUG", `[${requestId}] Skipping non-messages field`, { field: change.field });
+        log("DEBUG", `[${requestId}] Skipping non-messages field`, {
+          field: change.field,
+        });
         continue;
       }
 
       const value = change.value;
       const phoneNumberId = value.metadata.phone_number_id;
 
-      log("DEBUG", `[${requestId}] Processing Official API entry`, { phoneNumberId, hasMessages: !!value.messages });
+      log("DEBUG", `[${requestId}] Processing Official API entry`, {
+        phoneNumberId,
+        hasMessages: !!value.messages,
+      });
 
       const { data: connection, error: connError } = await supabase
         .from("whatsapp_connections")
@@ -368,25 +474,43 @@ async function handleOfficialWebhook(supabase: any, supabaseUrl: string, supabas
         .single();
 
       if (connError || !connection) {
-        log("ERROR", `[${requestId}] Connection not found for phone_number_id`, { phoneNumberId });
+        log(
+          "ERROR",
+          `[${requestId}] Connection not found for phone_number_id`,
+          { phoneNumberId }
+        );
         continue;
       }
 
       if (value.messages) {
         log("INFO", `[${requestId}] Processing Official API messages`, {
           connectionId: connection.id,
-          messageCount: value.messages.length
+          messageCount: value.messages.length,
         });
 
         for (const msg of value.messages) {
-          await processOfficialMessage(supabase, supabaseUrl, supabaseKey, connection, msg, requestId);
+          await processOfficialMessage(
+            supabase,
+            supabaseUrl,
+            supabaseKey,
+            connection,
+            msg,
+            requestId
+          );
         }
       }
     }
   }
 }
 
-async function processIncomingMessage(supabase: any, supabaseUrl: string, supabaseKey: string, connection: any, msgData: any, requestId: string) {
+async function processIncomingMessage(
+  supabase: any,
+  supabaseUrl: string,
+  supabaseKey: string,
+  connection: any,
+  msgData: any,
+  requestId: string
+) {
   try {
     const key = msgData.key;
     if (!key) {
@@ -404,7 +528,11 @@ async function processIncomingMessage(supabase: any, supabaseUrl: string, supaba
 
     let content = "";
     let messageType = "text";
-    let mediaInfo: { url?: string; mimeType?: string; caption?: string } | null = null;
+    let mediaInfo: {
+      url?: string;
+      mimeType?: string;
+      caption?: string;
+    } | null = null;
 
     if (msgData.message?.conversation) {
       content = msgData.message.conversation;
@@ -416,16 +544,22 @@ async function processIncomingMessage(supabase: any, supabaseUrl: string, supaba
       const audio = msgData.message.audioMessage;
       mediaInfo = {
         url: audio.url,
-        mimeType: audio.mimetype
+        mimeType: audio.mimetype,
       };
       log("INFO", `[${requestId}] Audio message detected`, {
         mimeType: audio.mimetype,
         seconds: audio.seconds,
-        ptt: audio.ptt
+        ptt: audio.ptt,
       });
 
       // Transcribe audio
-      content = await transcribeAudio(supabaseUrl, supabaseKey, audio.url, audio.mimetype, requestId);
+      content = await transcribeAudio(
+        supabaseUrl,
+        supabaseKey,
+        audio.url,
+        audio.mimetype,
+        requestId
+      );
       if (!content) {
         content = "[Áudio recebido - transcrição não disponível]";
       }
@@ -436,16 +570,23 @@ async function processIncomingMessage(supabase: any, supabaseUrl: string, supaba
       mediaInfo = {
         url: image.url,
         mimeType: image.mimetype,
-        caption: image.caption
+        caption: image.caption,
       };
       log("INFO", `[${requestId}] Image message detected`, {
         mimeType: image.mimetype,
         dimensions: `${image.width}x${image.height}`,
-        hasCaption: !!image.caption
+        hasCaption: !!image.caption,
       });
 
       // Analyze image
-      const imageDescription = await analyzeImage(supabaseUrl, supabaseKey, image.url, image.mimetype, null, requestId);
+      const imageDescription = await analyzeImage(
+        supabaseUrl,
+        supabaseKey,
+        image.url,
+        image.mimetype,
+        null,
+        requestId
+      );
       content = image.caption
         ? `${image.caption}\n\n[Descrição da imagem: ${imageDescription}]`
         : `[Imagem: ${imageDescription}]`;
@@ -453,10 +594,16 @@ async function processIncomingMessage(supabase: any, supabaseUrl: string, supaba
       // Document - just notify, don't process
       messageType = "document";
       const doc = msgData.message.documentMessage;
-      content = `[Documento recebido: ${doc.fileName || doc.title || 'arquivo'}]`;
-      log("INFO", `[${requestId}] Document message detected`, { fileName: doc.fileName });
+      content = `[Documento recebido: ${
+        doc.fileName || doc.title || "arquivo"
+      }]`;
+      log("INFO", `[${requestId}] Document message detected`, {
+        fileName: doc.fileName,
+      });
     } else {
-      log("DEBUG", `[${requestId}] Unsupported message type, skipping`, { messageType: Object.keys(msgData.message || {}) });
+      log("DEBUG", `[${requestId}] Unsupported message type, skipping`, {
+        messageType: Object.keys(msgData.message || {}),
+      });
       return;
     }
 
@@ -466,30 +613,50 @@ async function processIncomingMessage(supabase: any, supabaseUrl: string, supaba
       phoneNumber,
       senderName,
       contentLength: content.length,
-      messageId: key.id
+      messageId: key.id,
     });
 
     // Find or create lead
-    let lead = await findOrCreateLead(supabase, connection, phoneNumber, senderName, requestId);
+    const lead = await findOrCreateLead(
+      supabase,
+      connection,
+      phoneNumber,
+      senderName,
+      requestId
+    );
 
     // Find or create conversation
-    let conversation = await findOrCreateConversation(supabase, connection, lead, requestId);
+    const conversation = await findOrCreateConversation(
+      supabase,
+      connection,
+      lead,
+      requestId
+    );
 
     // Save message
-    const { data: savedMessage, error: msgError } = await supabase.from("messages").insert({
-      workspace_id: connection.workspace_id,
-      conversation_id: conversation.id,
-      content,
-      sender_type: "lead",
-      sender_id: null,
-      whatsapp_message_id: key.id,
-      whatsapp_connection_id: connection.id,
-    }).select().single();
+    const { data: savedMessage, error: msgError } = await supabase
+      .from("messages")
+      .insert({
+        workspace_id: connection.workspace_id,
+        conversation_id: conversation.id,
+        content,
+        sender_type: "lead",
+        sender_id: null,
+        whatsapp_message_id: key.id,
+        whatsapp_connection_id: connection.id,
+      })
+      .select()
+      .single();
 
     if (msgError) {
-      log("ERROR", `[${requestId}] Failed to save message`, { error: msgError.message });
+      log("ERROR", `[${requestId}] Failed to save message`, {
+        error: msgError.message,
+      });
     } else {
-      log("INFO", `[${requestId}] Message saved`, { messageId: savedMessage.id, leadId: lead.id });
+      log("INFO", `[${requestId}] Message saved`, {
+        messageId: savedMessage.id,
+        leadId: lead.id,
+      });
     }
 
     // Update lead's last message
@@ -517,36 +684,68 @@ async function processIncomingMessage(supabase: any, supabaseUrl: string, supaba
       lead_id: lead.id,
       type: "new_message",
       title: `Nova mensagem de ${senderName}`,
-      description: content.length > 100 ? content.substring(0, 100) + "..." : content,
+      description:
+        content.length > 100 ? content.substring(0, 100) + "..." : content,
       priority: "high",
     });
 
     // === AI INTEGRATION ===
-    await processAIResponse(supabase, supabaseUrl, supabaseKey, connection, lead, conversation, content, requestId);
-
+    await processAIResponse(
+      supabase,
+      supabaseUrl,
+      supabaseKey,
+      connection,
+      lead,
+      conversation,
+      content,
+      requestId
+    );
   } catch (error: any) {
-    log("ERROR", `[${requestId}] Error processing message`, { error: error.message, stack: error.stack });
+    log("ERROR", `[${requestId}] Error processing message`, {
+      error: error.message,
+      stack: error.stack,
+    });
   }
 }
 
-async function processOfficialMessage(supabase: any, supabaseUrl: string, supabaseKey: string, connection: any, msg: any, requestId: string) {
+async function processOfficialMessage(
+  supabase: any,
+  supabaseUrl: string,
+  supabaseKey: string,
+  connection: any,
+  msg: any,
+  requestId: string
+) {
   try {
     const phoneNumber = msg.from;
     const content = msg.text?.body || "";
 
     if (!content) {
-      log("DEBUG", `[${requestId}] Non-text Official API message, skipping`, { type: msg.type });
+      log("DEBUG", `[${requestId}] Non-text Official API message, skipping`, {
+        type: msg.type,
+      });
       return;
     }
 
     log("INFO", `[${requestId}] Processing Official API message`, {
       phoneNumber,
       contentLength: content.length,
-      messageId: msg.id
+      messageId: msg.id,
     });
 
-    let lead = await findOrCreateLead(supabase, connection, phoneNumber, phoneNumber, requestId);
-    let conversation = await findOrCreateConversation(supabase, connection, lead, requestId);
+    const lead = await findOrCreateLead(
+      supabase,
+      connection,
+      phoneNumber,
+      phoneNumber,
+      requestId
+    );
+    const conversation = await findOrCreateConversation(
+      supabase,
+      connection,
+      lead,
+      requestId
+    );
 
     const { error: msgError } = await supabase.from("messages").insert({
       workspace_id: connection.workspace_id,
@@ -559,7 +758,9 @@ async function processOfficialMessage(supabase: any, supabaseUrl: string, supaba
     });
 
     if (msgError) {
-      log("ERROR", `[${requestId}] Failed to save Official API message`, { error: msgError.message });
+      log("ERROR", `[${requestId}] Failed to save Official API message`, {
+        error: msgError.message,
+      });
     }
 
     await supabase
@@ -577,17 +778,30 @@ async function processOfficialMessage(supabase: any, supabaseUrl: string, supaba
       lead_id: lead.id,
       type: "new_message",
       title: `Nova mensagem de ${phoneNumber}`,
-      description: content.length > 100 ? content.substring(0, 100) + "..." : content,
+      description:
+        content.length > 100 ? content.substring(0, 100) + "..." : content,
       priority: "high",
     });
 
-    log("INFO", `[${requestId}] Official API message processed`, { leadId: lead.id });
+    log("INFO", `[${requestId}] Official API message processed`, {
+      leadId: lead.id,
+    });
 
     // === AI INTEGRATION ===
-    await processAIResponse(supabase, supabaseUrl, supabaseKey, connection, lead, conversation, content, requestId);
-
+    await processAIResponse(
+      supabase,
+      supabaseUrl,
+      supabaseKey,
+      connection,
+      lead,
+      conversation,
+      content,
+      requestId
+    );
   } catch (error: any) {
-    log("ERROR", `[${requestId}] Error processing official message`, { error: error.message });
+    log("ERROR", `[${requestId}] Error processing official message`, {
+      error: error.message,
+    });
   }
 }
 
@@ -606,7 +820,7 @@ async function processAIResponse(
     log("INFO", `[${requestId}] Starting AI processing`, {
       workspace_id: connection.workspace_id,
       lead_id: lead.id,
-      conversation_id: conversation.id
+      conversation_id: conversation.id,
     });
 
     // Call AI Router Multi - pass connection_id to verify WhatsApp link
@@ -617,7 +831,7 @@ async function processAIResponse(
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${supabaseKey}`,
+        Authorization: `Bearer ${supabaseKey}`,
       },
       body: JSON.stringify({
         task: "chat",
@@ -635,7 +849,7 @@ async function processAIResponse(
     log("DEBUG", `[${requestId}] AI Router chat response`, {
       success: chatData.success,
       reason: chatData.reason,
-      provider: chatData.provider
+      provider: chatData.provider,
     });
 
     if (chatData.success && chatData.data?.response) {
@@ -646,15 +860,16 @@ async function processAIResponse(
       // Calculate delay (humanized)
       const minDelay = settings?.response_delay_min || 5;
       const maxDelay = settings?.response_delay_max || 15;
-      const delay = Math.floor(Math.random() * (maxDelay - minDelay + 1) + minDelay) * 1000;
+      const delay =
+        Math.floor(Math.random() * (maxDelay - minDelay + 1) + minDelay) * 1000;
 
       log("INFO", `[${requestId}] AI generated response, waiting ${delay}ms`, {
         responseLength: aiResponse.length,
-        provider: chatData.provider
+        provider: chatData.provider,
       });
 
       // Simple delay to simulate humanization
-      await new Promise(resolve => setTimeout(resolve, delay));
+      await new Promise((resolve) => setTimeout(resolve, delay));
 
       // Send the AI response via WhatsApp
       const sendUrl = `${supabaseUrl}/functions/v1/whatsapp-send`;
@@ -662,7 +877,7 @@ async function processAIResponse(
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${supabaseKey}`,
+          Authorization: `Bearer ${supabaseKey}`,
         },
         body: JSON.stringify({
           connection_id: connection.id,
@@ -670,7 +885,10 @@ async function processAIResponse(
           message: aiResponse,
           type: "text",
           // Evolution API specific: typing indicator
-          ...(connection.provider === 'evolution' && { delay: 1000, presence: 'composing' })
+          ...(connection.provider === "evolution" && {
+            delay: 1000,
+            presence: "composing",
+          }),
         }),
       });
 
@@ -679,7 +897,7 @@ async function processAIResponse(
       if (sendData.success) {
         log("INFO", `[${requestId}] AI response sent via WhatsApp`, {
           leadPhone: lead.phone,
-          messageId: sendData.messageId
+          messageId: sendData.messageId,
         });
 
         // Create notification about AI auto-response
@@ -687,16 +905,31 @@ async function processAIResponse(
           workspace_id: connection.workspace_id,
           type: "ai_response",
           title: `IA respondeu ${lead.name}`,
-          description: aiResponse.length > 100 ? aiResponse.substring(0, 100) + "..." : aiResponse,
+          description:
+            aiResponse.length > 100
+              ? aiResponse.substring(0, 100) + "..."
+              : aiResponse,
           priority: "low",
           lead_id: lead.id,
         });
       } else {
-        log("ERROR", `[${requestId}] Failed to send AI response`, { error: sendData.error });
+        log("ERROR", `[${requestId}] Failed to send AI response`, {
+          error: sendData.error,
+        });
       }
-    } else if (["ai_disabled", "outside_hours", "transfer_requested", "ai_not_active", "whatsapp_not_linked"].includes(chatData.reason)) {
+    } else if (
+      [
+        "ai_disabled",
+        "outside_hours",
+        "transfer_requested",
+        "ai_not_active",
+        "whatsapp_not_linked",
+      ].includes(chatData.reason)
+    ) {
       // AI is disabled or other reason - just run analysis and qualification in background
-      log("INFO", `[${requestId}] AI chat skipped`, { reason: chatData.reason });
+      log("INFO", `[${requestId}] AI chat skipped`, {
+        reason: chatData.reason,
+      });
     }
 
     // === ALWAYS RUN AI LEARNING (RAG enrichment) - independent of chatbot activation ===
@@ -706,7 +939,7 @@ async function processAIResponse(
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${supabaseKey}`,
+        Authorization: `Bearer ${supabaseKey}`,
       },
       body: JSON.stringify({
         workspace_id: connection.workspace_id,
@@ -716,14 +949,16 @@ async function processAIResponse(
         content: messageContent,
         sender_type: "lead", // Learning happens for lead messages too (questions to detect FAQs)
       }),
-    }).catch(err => log("WARN", `[${requestId}] AI Learning failed`, { error: err.message }));
+    }).catch((err) =>
+      log("WARN", `[${requestId}] AI Learning failed`, { error: err.message })
+    );
 
     // Always run analysis in background (for context extraction)
     const analyzePromise = fetch(aiRouterUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${supabaseKey}`,
+        Authorization: `Bearer ${supabaseKey}`,
       },
       body: JSON.stringify({
         task: "analyze",
@@ -734,7 +969,9 @@ async function processAIResponse(
           messages: [{ content: messageContent, sender_type: "lead" }],
         },
       }),
-    }).catch(err => log("WARN", `[${requestId}] Analysis failed`, { error: err.message }));
+    }).catch((err) =>
+      log("WARN", `[${requestId}] Analysis failed`, { error: err.message })
+    );
 
     // Run lead qualification periodically (every 5 messages)
     if ((lead.messages_count || 0) % 5 === 0) {
@@ -742,7 +979,7 @@ async function processAIResponse(
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${supabaseKey}`,
+          Authorization: `Bearer ${supabaseKey}`,
         },
         body: JSON.stringify({
           task: "qualify",
@@ -752,24 +989,41 @@ async function processAIResponse(
             conversation_id: conversation.id,
           },
         }),
-      }).catch(err => log("WARN", `[${requestId}] Qualification failed`, { error: err.message }));
+      }).catch((err) =>
+        log("WARN", `[${requestId}] Qualification failed`, {
+          error: err.message,
+        })
+      );
 
       // Don't await - run in background
-      Promise.all([learnPromise, analyzePromise, qualifyPromise]).catch(() => { });
+      Promise.all([learnPromise, analyzePromise, qualifyPromise]).catch(
+        () => {}
+      );
     } else {
       // Don't await - run in background
-      Promise.all([learnPromise, analyzePromise]).catch(() => { });
+      Promise.all([learnPromise, analyzePromise]).catch(() => {});
     }
 
-    log("INFO", `[${requestId}] AI processing completed (learning always active)`);
-
+    log(
+      "INFO",
+      `[${requestId}] AI processing completed (learning always active)`
+    );
   } catch (error: any) {
-    log("ERROR", `[${requestId}] AI processing error`, { error: error.message, stack: error.stack });
+    log("ERROR", `[${requestId}] AI processing error`, {
+      error: error.message,
+      stack: error.stack,
+    });
     // Don't throw - AI failure shouldn't break message processing
   }
 }
 
-async function findOrCreateLead(supabase: any, connection: any, phoneNumber: string, name: string, requestId: string) {
+async function findOrCreateLead(
+  supabase: any,
+  connection: any,
+  phoneNumber: string,
+  name: string,
+  requestId: string
+) {
   const { data: existingLead } = await supabase
     .from("leads")
     .select("*")
@@ -778,7 +1032,9 @@ async function findOrCreateLead(supabase: any, connection: any, phoneNumber: str
     .maybeSingle();
 
   if (existingLead) {
-    log("DEBUG", `[${requestId}] Existing lead found`, { leadId: existingLead.id });
+    log("DEBUG", `[${requestId}] Existing lead found`, {
+      leadId: existingLead.id,
+    });
     return existingLead;
   }
 
@@ -796,15 +1052,25 @@ async function findOrCreateLead(supabase: any, connection: any, phoneNumber: str
     .single();
 
   if (error) {
-    log("ERROR", `[${requestId}] Error creating lead`, { error: error.message });
+    log("ERROR", `[${requestId}] Error creating lead`, {
+      error: error.message,
+    });
     throw error;
   }
 
-  log("INFO", `[${requestId}] New lead created`, { leadId: newLead.id, phone: phoneNumber });
+  log("INFO", `[${requestId}] New lead created`, {
+    leadId: newLead.id,
+    phone: phoneNumber,
+  });
   return newLead;
 }
 
-async function findOrCreateConversation(supabase: any, connection: any, lead: any, requestId: string) {
+async function findOrCreateConversation(
+  supabase: any,
+  connection: any,
+  lead: any,
+  requestId: string
+) {
   const { data: existingConv } = await supabase
     .from("conversations")
     .select("*")
@@ -814,7 +1080,9 @@ async function findOrCreateConversation(supabase: any, connection: any, lead: an
     .maybeSingle();
 
   if (existingConv) {
-    log("DEBUG", `[${requestId}] Existing conversation found`, { conversationId: existingConv.id });
+    log("DEBUG", `[${requestId}] Existing conversation found`, {
+      conversationId: existingConv.id,
+    });
     return existingConv;
   }
 
@@ -829,10 +1097,15 @@ async function findOrCreateConversation(supabase: any, connection: any, lead: an
     .single();
 
   if (error) {
-    log("ERROR", `[${requestId}] Error creating conversation`, { error: error.message });
+    log("ERROR", `[${requestId}] Error creating conversation`, {
+      error: error.message,
+    });
     throw error;
   }
 
-  log("INFO", `[${requestId}] New conversation created`, { conversationId: newConv.id, leadId: lead.id });
+  log("INFO", `[${requestId}] New conversation created`, {
+    conversationId: newConv.id,
+    leadId: lead.id,
+  });
   return newConv;
 }

@@ -77,3 +77,6 @@ Se você conseguir **ver** os valores na tela (mesmo que não possa copiar), voc
 
 **Próximo passo:** Vou criar um script que ajuda a adicionar via CLI de forma interativa!
 
+
+
+

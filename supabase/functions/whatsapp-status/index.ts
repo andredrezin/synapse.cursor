@@ -3,7 +3,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
 };
 
 interface StatusRequest {
@@ -12,9 +13,19 @@ interface StatusRequest {
 }
 
 // Structured logging helper
-function log(level: "INFO" | "WARN" | "ERROR" | "DEBUG", message: string, data?: any) {
+function log(
+  level: "INFO" | "WARN" | "ERROR" | "DEBUG",
+  message: string,
+  data?: any
+) {
   const timestamp = new Date().toISOString();
-  const logEntry = { timestamp, level, function: "whatsapp-status", message, ...(data && { data }) };
+  const logEntry = {
+    timestamp,
+    level,
+    function: "whatsapp-status",
+    message,
+    ...(data && { data }),
+  };
   console.log(JSON.stringify(logEntry));
 }
 
@@ -40,15 +51,24 @@ serve(async (req) => {
     });
 
     const body: StatusRequest = await req.json();
-    log("INFO", `[${requestId}] Status request`, { connection_id: body.connection_id, action: body.action });
+    log("INFO", `[${requestId}] Status request`, {
+      connection_id: body.connection_id,
+      action: body.action,
+    });
 
     const { connection_id, action } = body;
 
     if (!connection_id || !action) {
       log("WARN", `[${requestId}] Missing required fields`);
       return new Response(
-        JSON.stringify({ success: false, error: "Missing required fields: connection_id, action" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({
+          success: false,
+          error: "Missing required fields: connection_id, action",
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
       );
     }
 
@@ -60,10 +80,16 @@ serve(async (req) => {
       .single();
 
     if (connError || !connection) {
-      log("ERROR", `[${requestId}] Connection not found`, { connection_id, error: connError?.message });
+      log("ERROR", `[${requestId}] Connection not found`, {
+        connection_id,
+        error: connError?.message,
+      });
       return new Response(
         JSON.stringify({ success: false, error: "Connection not found" }),
-        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        {
+          status: 404,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
       );
     }
 
@@ -71,60 +97,108 @@ serve(async (req) => {
       connectionId: connection.id,
       provider: connection.provider,
       status: connection.status,
-      instance_name: connection.instance_name
+      instance_name: connection.instance_name,
     });
 
-    let result: any = { success: true };
+    const result: any = { success: true };
 
     if (connection.provider === "evolution") {
       if (!evolutionApiUrl || !evolutionApiKey) {
         log("ERROR", `[${requestId}] Evolution API not configured`);
         return new Response(
-          JSON.stringify({ success: false, error: "Evolution API não configurada" }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          JSON.stringify({
+            success: false,
+            error: "Evolution API não configurada",
+          }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
         );
       }
 
       const { instance_name } = connection;
-      log("DEBUG", `[${requestId}] Processing Evolution action`, { action, instance_name });
+      log("DEBUG", `[${requestId}] Processing Evolution action`, {
+        action,
+        instance_name,
+      });
 
       switch (action) {
-        case "refresh_qr":
-          log("INFO", `[${requestId}] Refreshing QR code`);
-          const qrResponse = await fetch(`${evolutionApiUrl}/instance/connect/${instance_name}`, {
-            method: "GET",
-            headers: { "apikey": evolutionApiKey },
-          });
+        case "refresh_qr": {
+          log("INFO", `[${requestId}] Refreshing QR code (Force New Session)`);
 
-          log("DEBUG", `[${requestId}] QR refresh response`, { status: qrResponse.status });
+          // 1. Force Logout first to clear stuck states
+          try {
+            await fetch(`${evolutionApiUrl}/instance/logout/${instance_name}`, {
+              method: "DELETE",
+              headers: { apikey: evolutionApiKey },
+            });
+            // Wait a bit for the logout to propagate
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+          } catch (e) {
+            log("WARN", `[${requestId}] Logout failed (ignoring)`, {
+              error: e,
+            });
+          }
+
+          // 2. Connect (Fetch new QR)
+          const qrResponse = await fetch(
+            `${evolutionApiUrl}/instance/connect/${instance_name}`,
+            {
+              method: "GET",
+              headers: { apikey: evolutionApiKey },
+            }
+          );
+
+          log("DEBUG", `[${requestId}] QR refresh response`, {
+            status: qrResponse.status,
+          });
 
           if (qrResponse.ok) {
             const qrData = await qrResponse.json();
-            if (qrData.base64) {
+            // Supports both v1 (base64) and v2 (qrcode.base64)
+            const base64 = qrData.base64 || qrData.qrcode?.base64;
+
+            if (base64) {
               await supabase
                 .from("whatsapp_connections")
                 .update({
-                  qr_code: qrData.base64,
+                  qr_code: base64,
                   status: "qr_pending",
                 })
                 .eq("id", connection_id);
 
-              result.qr_code = qrData.base64;
+              result.qr_code = base64;
               log("INFO", `[${requestId}] QR code refreshed successfully`);
+            } else {
+              log("WARN", `[${requestId}] No base64 in response`, { qrData });
+              result.success = false;
+              result.error = "Evolution did not return a QR Code";
             }
           } else {
-            log("WARN", `[${requestId}] Failed to refresh QR code`);
+            const errText = await qrResponse.text();
+            log("WARN", `[${requestId}] Failed to refresh QR code`, {
+              errText,
+            });
+            result.success = false;
+            result.error = "Failed to fetch QR from Evolution";
           }
           break;
+        }
 
-        case "disconnect":
+        case "disconnect": {
           log("INFO", `[${requestId}] Disconnecting instance`);
-          const logoutResponse = await fetch(`${evolutionApiUrl}/instance/logout/${instance_name}`, {
-            method: "DELETE",
-            headers: { "apikey": evolutionApiKey },
-          });
+          const logoutResponse = await fetch(
+            `${evolutionApiUrl}/instance/logout/${instance_name}`,
+            {
+              method: "DELETE",
+              headers: { apikey: evolutionApiKey },
+            }
+          );
 
-          log("DEBUG", `[${requestId}] Logout response`, { status: logoutResponse.status });
+          log("DEBUG", `[${requestId}] Logout response`, {
+            status: logoutResponse.status,
+          });
 
           await supabase
             .from("whatsapp_connections")
@@ -138,21 +212,30 @@ serve(async (req) => {
           await supabase.from("whatsapp_connection_logs").insert({
             connection_id: connection.id,
             event_type: "manual_disconnect",
-            event_data: { action: "disconnect", timestamp: new Date().toISOString() },
+            event_data: {
+              action: "disconnect",
+              timestamp: new Date().toISOString(),
+            },
           });
 
           result.message = "Disconnected successfully";
           log("INFO", `[${requestId}] Instance disconnected`);
           break;
+        }
 
-        case "reconnect":
+        case "reconnect": {
           log("INFO", `[${requestId}] Reconnecting instance`);
-          const restartResponse = await fetch(`${evolutionApiUrl}/instance/restart/${instance_name}`, {
-            method: "PUT",
-            headers: { "apikey": evolutionApiKey },
-          });
+          const restartResponse = await fetch(
+            `${evolutionApiUrl}/instance/restart/${instance_name}`,
+            {
+              method: "PUT",
+              headers: { apikey: evolutionApiKey },
+            }
+          );
 
-          log("DEBUG", `[${requestId}] Restart response`, { status: restartResponse.status });
+          log("DEBUG", `[${requestId}] Restart response`, {
+            status: restartResponse.status,
+          });
 
           await supabase
             .from("whatsapp_connections")
@@ -162,15 +245,21 @@ serve(async (req) => {
           result.message = "Reconnecting...";
           log("INFO", `[${requestId}] Instance reconnecting`);
           break;
+        }
 
-        case "check_status":
+        case "check_status": {
           log("INFO", `[${requestId}] Checking connection status`);
-          const statusResponse = await fetch(`${evolutionApiUrl}/instance/connectionState/${instance_name}`, {
-            method: "GET",
-            headers: { "apikey": evolutionApiKey },
-          });
+          const statusResponse = await fetch(
+            `${evolutionApiUrl}/instance/connectionState/${instance_name}`,
+            {
+              method: "GET",
+              headers: { apikey: evolutionApiKey },
+            }
+          );
 
-          log("DEBUG", `[${requestId}] Status check response`, { status: statusResponse.status });
+          log("DEBUG", `[${requestId}] Status check response`, {
+            status: statusResponse.status,
+          });
 
           if (statusResponse.ok) {
             const statusData = await statusResponse.json();
@@ -190,36 +279,61 @@ serve(async (req) => {
             // If connected, try to fetch the phone number
             if (newStatus === "connected") {
               try {
-                log("INFO", `[${requestId}] Fetching number for connected instance`);
+                log(
+                  "INFO",
+                  `[${requestId}] Fetching number for connected instance`
+                );
                 // We use fetchInstances to get the owner JID which contains the number
-                const instancesResponse = await fetch(`${evolutionApiUrl}/instance/fetchInstances`, {
-                  method: "GET",
-                  headers: { "apikey": evolutionApiKey },
-                });
+                const instancesResponse = await fetch(
+                  `${evolutionApiUrl}/instance/fetchInstances`,
+                  {
+                    method: "GET",
+                    headers: { apikey: evolutionApiKey },
+                  }
+                );
 
                 if (instancesResponse.ok) {
                   const instances = await instancesResponse.json();
                   // Find our instance
-                  // Evolution v1 might return array directly, v2 might return inside an object. 
+                  // Evolution v1 might return array directly, v2 might return inside an object.
                   // Usually it's an array of instance objects.
                   const instanceData = Array.isArray(instances)
-                    ? instances.find((i: any) => i.instance.instanceName === instance_name || i.instance.name === instance_name)
-                    : instances.find?.((i: any) => i.instance.instanceName === instance_name); // Fallback if it's a wrapper
+                    ? instances.find(
+                        (i: any) =>
+                          i.instance.instanceName === instance_name ||
+                          i.instance.name === instance_name
+                      )
+                    : instances.find?.(
+                        (i: any) => i.instance.instanceName === instance_name
+                      ); // Fallback if it's a wrapper
 
                   // Evolution API structure varies. Often: record.instance.owner (JID)
-                  if (instanceData && instanceData.instance && instanceData.instance.owner) {
+                  if (
+                    instanceData &&
+                    instanceData.instance &&
+                    instanceData.instance.owner
+                  ) {
                     const ownerJid = instanceData.instance.owner; // e.g. 551199999999@s.whatsapp.net
-                    const phoneNumber = ownerJid.split('@')[0];
+                    const phoneNumber = ownerJid.split("@")[0];
                     updateData.phone_number = phoneNumber;
-                    log("INFO", `[${requestId}] Phone number found: ${phoneNumber}`);
+                    log(
+                      "INFO",
+                      `[${requestId}] Phone number found: ${phoneNumber}`
+                    );
                   } else {
-                    log("WARN", `[${requestId}] Instance found but no owner/number`, { instanceData });
+                    log(
+                      "WARN",
+                      `[${requestId}] Instance found but no owner/number`,
+                      { instanceData }
+                    );
                   }
                 } else {
                   log("WARN", `[${requestId}] Failed to fetch instances list`);
                 }
               } catch (numErr) {
-                log("ERROR", `[${requestId}] Error fetching phone number`, { error: numErr });
+                log("ERROR", `[${requestId}] Error fetching phone number`, {
+                  error: numErr,
+                });
               }
             }
 
@@ -234,22 +348,24 @@ serve(async (req) => {
             log("WARN", `[${requestId}] Failed to check status`);
           }
           break;
+        }
 
         default:
           log("WARN", `[${requestId}] Unknown action`, { action });
       }
-
     } else if (connection.provider === "official") {
       log("DEBUG", `[${requestId}] Processing Official API action`, { action });
 
       switch (action) {
-        case "check_status":
+        case "check_status": {
           log("INFO", `[${requestId}] Checking Official API token`);
           const verifyResponse = await fetch(
             `https://graph.facebook.com/v18.0/${connection.instance_name}?access_token=${connection.api_key}`
           );
 
-          log("DEBUG", `[${requestId}] Token verify response`, { status: verifyResponse.status });
+          log("DEBUG", `[${requestId}] Token verify response`, {
+            status: verifyResponse.status,
+          });
 
           if (verifyResponse.ok) {
             result.status = "connected";
@@ -265,6 +381,7 @@ serve(async (req) => {
             log("WARN", `[${requestId}] Token invalid or expired`);
           }
           break;
+        }
 
         case "disconnect":
           log("INFO", `[${requestId}] Disconnecting Official API connection`);
@@ -276,30 +393,39 @@ serve(async (req) => {
           await supabase.from("whatsapp_connection_logs").insert({
             connection_id: connection.id,
             event_type: "manual_disconnect",
-            event_data: { action: "disconnect", timestamp: new Date().toISOString() },
+            event_data: {
+              action: "disconnect",
+              timestamp: new Date().toISOString(),
+            },
           });
 
           result.message = "Disconnected successfully";
           break;
 
         default:
-          log("WARN", `[${requestId}] Action not supported for Official API`, { action });
+          log("WARN", `[${requestId}] Action not supported for Official API`, {
+            action,
+          });
           result.message = "Action not supported for Official API";
       }
     }
 
     log("INFO", `[${requestId}] Request completed`, { result });
 
-    return new Response(
-      JSON.stringify(result),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-
+    return new Response(JSON.stringify(result), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (error: any) {
-    log("ERROR", `[${requestId}] Unhandled error`, { error: error.message, stack: error.stack });
+    log("ERROR", `[${requestId}] Unhandled error`, {
+      error: error.message,
+      stack: error.stack,
+    });
     return new Response(
       JSON.stringify({ success: false, error: error.message }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
     );
   }
 });

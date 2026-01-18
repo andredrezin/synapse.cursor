@@ -1,13 +1,13 @@
-import { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import DashboardLayout from '@/components/dashboard/DashboardLayout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { useState, useEffect, useRef } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import DashboardLayout from "@/components/dashboard/DashboardLayout";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   ArrowLeft,
   Send,
@@ -22,16 +22,16 @@ import {
   CheckCheck,
   Loader2,
   Lightbulb,
-} from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import { useSendWhatsAppMessage } from '@/hooks/useSendWhatsAppMessage';
-import { useAISuggestions } from '@/hooks/useAISuggestions';
-import { formatDistanceToNow } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
-import { sanitizeTextContent } from '@/lib/security';
-import { logError } from '@/lib/logger';
+} from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useSendWhatsAppMessage } from "@/hooks/useSendWhatsAppMessage";
+import { useAISuggestions } from "@/hooks/useAISuggestions";
+import { formatDistanceToNow } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { cn } from "@/lib/utils";
+import { sanitizeTextContent } from "@/lib/security";
+import { logError } from "@/lib/logger";
 
 interface Message {
   id: string;
@@ -56,9 +56,9 @@ interface Conversation {
 
 const getSentimentIcon = (sentiment: string | null) => {
   switch (sentiment) {
-    case 'positive':
+    case "positive":
       return <TrendingUp className="w-4 h-4 text-chart-green" />;
-    case 'negative':
+    case "negative":
       return <TrendingDown className="w-4 h-4 text-chart-red" />;
     default:
       return <Minus className="w-4 h-4 text-muted-foreground" />;
@@ -70,16 +70,21 @@ const ChatRoom = () => {
   const navigate = useNavigate();
   const { workspace } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  
+
   const [conversation, setConversation] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [newMessage, setNewMessage] = useState('');
-  
+  const [newMessage, setNewMessage] = useState("");
+
   const sendMessageMutation = useSendWhatsAppMessage();
-  const { suggestions, isLoading: suggestionsLoading, fetchSuggestions, clearSuggestions } = useAISuggestions({
-    conversationId: conversationId || '',
-    leadId: conversation?.lead?.id || '',
+  const {
+    suggestions,
+    isLoading: suggestionsLoading,
+    fetchSuggestions,
+    clearSuggestions,
+  } = useAISuggestions({
+    conversationId: conversationId || "",
+    leadId: conversation?.lead?.id || "",
   });
 
   // Fetch conversation and messages
@@ -88,15 +93,17 @@ const ChatRoom = () => {
 
     const fetchData = async () => {
       setIsLoading(true);
-      
+
       // Fetch conversation with lead
       const { data: convData } = await supabase
-        .from('conversations')
-        .select(`
+        .from("conversations")
+        .select(
+          `
           id, status, sentiment,
           lead:leads(id, name, phone, temperature, score)
-        `)
-        .eq('id', conversationId)
+        `
+        )
+        .eq("id", conversationId)
         .single();
 
       if (convData) {
@@ -105,13 +112,13 @@ const ChatRoom = () => {
 
       // Fetch messages
       const { data: messagesData, error: messagesError } = await supabase
-        .from('messages')
-        .select('*')
-        .eq('conversation_id', conversationId)
-        .order('created_at', { ascending: true });
+        .from("messages")
+        .select("*")
+        .eq("conversation_id", conversationId)
+        .order("created_at", { ascending: true });
 
       if (messagesError) {
-        logError('Error fetching messages', messagesError, 'ChatRoom');
+        logError("Error fetching messages", messagesError, "ChatRoom");
       }
 
       if (messagesData) {
@@ -127,15 +134,15 @@ const ChatRoom = () => {
     const channel = supabase
       .channel(`messages:${conversationId}`)
       .on(
-        'postgres_changes',
+        "postgres_changes",
         {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages',
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
           filter: `conversation_id=eq.${conversationId}`,
         },
         (payload) => {
-          setMessages(prev => [...prev, payload.new as Message]);
+          setMessages((prev) => [...prev, payload.new as Message]);
         }
       )
       .subscribe();
@@ -147,16 +154,16 @@ const ChatRoom = () => {
 
   // Scroll to bottom on new messages
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   // Fetch AI suggestions when lead sends a message
   useEffect(() => {
     if (messages.length === 0) return;
-    
+
     const lastMessage = messages[messages.length - 1];
-    if (lastMessage.sender_type === 'lead') {
-      const history = messages.map(m => ({
+    if (lastMessage.sender_type === "lead") {
+      const history = messages.map((m) => ({
         content: m.content,
         sender_type: m.sender_type,
       }));
@@ -169,30 +176,38 @@ const ChatRoom = () => {
 
     // Sanitize message before saving
     const sanitizedMessage = sanitizeTextContent(newMessage.trim());
-    
+
     if (!sanitizedMessage) {
-      logError('Attempted to send empty message after sanitization', undefined, 'ChatRoom');
+      logError(
+        "Attempted to send empty message after sanitization",
+        undefined,
+        "ChatRoom"
+      );
       return;
     }
 
     try {
       // Save message to database with sanitized content
-      const { error } = await supabase.from('messages').insert({
+      const { error } = await supabase.from("messages").insert({
         conversation_id: conversation.id,
         workspace_id: workspace?.id,
         content: sanitizedMessage,
-        sender_type: 'agent',
+        sender_type: "agent",
       });
 
       if (error) {
-        logError('Error saving message to database', error, 'ChatRoom');
+        logError("Error saving message to database", error, "ChatRoom");
         throw error;
       }
 
-      setNewMessage('');
+      setNewMessage("");
       clearSuggestions();
     } catch (error) {
-      logError('Failed to send message', error instanceof Error ? error : new Error(String(error)), 'ChatRoom');
+      logError(
+        "Failed to send message",
+        error instanceof Error ? error : new Error(String(error)),
+        "ChatRoom"
+      );
     }
   };
 
@@ -216,7 +231,11 @@ const ChatRoom = () => {
       <DashboardLayout>
         <div className="text-center py-12">
           <p className="text-muted-foreground">Conversa não encontrada</p>
-          <Button variant="outline" className="mt-4" onClick={() => navigate('/dashboard/conversations')}>
+          <Button
+            variant="outline"
+            className="mt-4"
+            onClick={() => navigate("/dashboard/conversations")}
+          >
             Voltar para Conversas
           </Button>
         </div>
@@ -229,7 +248,11 @@ const ChatRoom = () => {
       <div className="h-[calc(100vh-8rem)] flex flex-col">
         {/* Header */}
         <div className="flex items-center gap-4 mb-4 pb-4 border-b">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard/conversations')}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate("/dashboard/conversations")}
+          >
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <Avatar className="w-10 h-10">
@@ -240,8 +263,12 @@ const ChatRoom = () => {
           <div className="flex-1">
             <div className="flex items-center gap-2">
               <h2 className="font-semibold">{conversation.lead.name}</h2>
-              <Badge variant={conversation.status === 'open' ? 'default' : 'secondary'}>
-                {conversation.status === 'open' ? 'Aberta' : 'Fechada'}
+              <Badge
+                variant={
+                  conversation.status === "open" ? "default" : "secondary"
+                }
+              >
+                {conversation.status === "open" ? "Aberta" : "Fechada"}
               </Badge>
               {getSentimentIcon(conversation.sentiment)}
             </div>
@@ -259,25 +286,25 @@ const ChatRoom = () => {
           <ScrollArea className="flex-1 p-4">
             <div className="space-y-4">
               {messages.map((message) => {
-                const isLead = message.sender_type === 'lead';
-                const isAI = message.sender_type === 'ai';
-                
+                const isLead = message.sender_type === "lead";
+                const isAI = message.sender_type === "ai";
+
                 return (
                   <div
                     key={message.id}
                     className={cn(
-                      'flex',
-                      isLead ? 'justify-start' : 'justify-end'
+                      "flex",
+                      isLead ? "justify-start" : "justify-end"
                     )}
                   >
                     <div
                       className={cn(
-                        'max-w-[70%] rounded-2xl px-4 py-2',
+                        "max-w-[70%] rounded-2xl px-4 py-2",
                         isLead
-                          ? 'bg-secondary rounded-tl-none'
+                          ? "bg-secondary rounded-tl-none"
                           : isAI
-                          ? 'bg-chart-purple/20 text-foreground rounded-tr-none'
-                          : 'bg-primary text-primary-foreground rounded-tr-none'
+                          ? "bg-chart-purple/20 text-foreground rounded-tr-none"
+                          : "bg-primary text-primary-foreground rounded-tr-none"
                       )}
                     >
                       {isAI && (
@@ -286,12 +313,14 @@ const ChatRoom = () => {
                           Resposta da IA
                         </div>
                       )}
-                      <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                      <p className="text-sm whitespace-pre-wrap">
+                        {message.content}
+                      </p>
                       <div className="flex items-center gap-1 mt-1">
                         <span className="text-xs opacity-60">
-                          {formatDistanceToNow(new Date(message.created_at), { 
-                            addSuffix: true, 
-                            locale: ptBR 
+                          {formatDistanceToNow(new Date(message.created_at), {
+                            addSuffix: true,
+                            locale: ptBR,
                           })}
                         </span>
                         {!isLead && message.is_read && (
@@ -322,17 +351,23 @@ const ChatRoom = () => {
                     className="text-xs h-auto py-1.5 whitespace-normal text-left"
                     onClick={() => handleUseSuggestion(suggestion.text)}
                   >
-                    <Badge 
-                      variant="secondary" 
+                    <Badge
+                      variant="secondary"
                       className={cn(
-                        'mr-2 text-[10px]',
-                        suggestion.type === 'closing' && 'bg-chart-green/20 text-chart-green',
-                        suggestion.type === 'professional' && 'bg-chart-blue/20 text-chart-blue',
-                        suggestion.type === 'friendly' && 'bg-chart-orange/20 text-chart-orange',
+                        "mr-2 text-[10px]",
+                        suggestion.type === "closing" &&
+                          "bg-chart-green/20 text-chart-green",
+                        suggestion.type === "professional" &&
+                          "bg-chart-blue/20 text-chart-blue",
+                        suggestion.type === "friendly" &&
+                          "bg-chart-orange/20 text-chart-orange"
                       )}
                     >
-                      {suggestion.type === 'closing' ? 'Fechamento' : 
-                       suggestion.type === 'professional' ? 'Profissional' : 'Amigável'}
+                      {suggestion.type === "closing"
+                        ? "Fechamento"
+                        : suggestion.type === "professional"
+                        ? "Profissional"
+                        : "Amigável"}
                     </Badge>
                     <span className="line-clamp-1">{suggestion.text}</span>
                   </Button>
@@ -344,7 +379,9 @@ const ChatRoom = () => {
           {suggestionsLoading && (
             <div className="px-4 py-2 border-t bg-secondary/30 flex items-center gap-2">
               <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Gerando sugestões...</span>
+              <span className="text-sm text-muted-foreground">
+                Gerando sugestões...
+              </span>
             </div>
           )}
 
@@ -355,14 +392,12 @@ const ChatRoom = () => {
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 placeholder="Digite sua mensagem..."
-                onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
+                onKeyDown={(e) =>
+                  e.key === "Enter" && !e.shiftKey && handleSendMessage()
+                }
               />
               <Button onClick={handleSendMessage} disabled={!newMessage.trim()}>
-                {false ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Send className="w-4 h-4" />
-                )}
+                <Send className="w-4 h-4" />
               </Button>
             </div>
           </div>

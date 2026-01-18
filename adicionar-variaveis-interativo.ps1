@@ -80,3 +80,6 @@ Write-Host "   2. Faça um novo deploy ou aguarde o próximo commit" -Foreground
 Write-Host "   3. Teste a aplicação: https://synapsecursor.vercel.app" -ForegroundColor White
 Write-Host ""
 
+
+
+

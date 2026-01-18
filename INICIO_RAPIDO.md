@@ -53,3 +53,6 @@ Acesse: **https://synapsecursor.vercel.app**
 
 **Tempo total: 4 minutos!** 🚀
 
+
+
+

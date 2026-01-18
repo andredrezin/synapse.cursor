@@ -115,3 +115,6 @@ if ($fazerDeploy -eq "S" -or $fazerDeploy -eq "s") {
 Write-Host ""
 Write-Host "🎉 Configuração concluída!" -ForegroundColor Green
 
+
+
+

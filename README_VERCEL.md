@@ -79,3 +79,6 @@ Acesse: https://synapsecursor.vercel.app
 
 **🎉 Pronto para usar!**
 
+
+
+

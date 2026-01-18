@@ -13,6 +13,7 @@ VITE_SUPABASE_PUBLISHABLE_KEY=sua-chave-publica-aqui
 ```
 
 **Onde obter:**
+
 - Acesse: https://app.supabase.com/project/[seu-projeto]/settings/api
 - Copie a URL e a chave pública (anon key)
 
@@ -21,14 +22,15 @@ VITE_SUPABASE_PUBLISHABLE_KEY=sua-chave-publica-aqui
 ## 🔧 Variáveis das Edge Functions (Supabase Dashboard)
 
 Configure essas variáveis no **Supabase Dashboard**:
+
 1. Acesse: Edge Functions > Settings > Secrets
 2. Adicione cada variável abaixo:
 
 ### Obrigatórias
 
 ```env
-# Lovable AI Gateway
-LOVABLE_API_KEY=sua-chave-lovable-aqui
+# OpenAI API Key (para substituir o Lovable)
+OPENAI_API_KEY=sua-chave-openai-aqui
 
 # URLs do Frontend
 FRONTEND_URL=https://seu-dominio.com
@@ -55,6 +57,7 @@ STRIPE_SECRET_KEY=sk_test_sua-chave-secreta-aqui
 ## 📝 Variáveis Automáticas do Supabase
 
 Essas são configuradas automaticamente pelo Supabase:
+
 - `SUPABASE_URL`
 - `SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
@@ -99,11 +102,13 @@ npm run dev
 Para verificar se as variáveis estão configuradas:
 
 ### Frontend
+
 ```typescript
 console.log(import.meta.env.VITE_SUPABASE_URL);
 ```
 
 ### Edge Functions
+
 ```typescript
 const apiKey = Deno.env.get("LOVABLE_API_KEY");
 console.log("API Key configured:", !!apiKey);
@@ -116,6 +121,3 @@ console.log("API Key configured:", !!apiKey);
 - [Documentação do Supabase](https://supabase.com/docs)
 - [Configuração de Edge Functions](https://supabase.com/docs/guides/functions/secrets)
 - [Variáveis de Ambiente no Vite](https://vitejs.dev/guide/env-and-mode.html)
-
-
-

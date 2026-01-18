@@ -62,6 +62,13 @@ export default function SetupIAForm({
       if (initialData.ai_personality) {
         setValue("tipoNegocio", initialData.ai_personality);
       }
+
+      // Tentativa de inferir produto do system_prompt se disponível
+      if (initialData.system_prompt) {
+        // Se temos um prompt de sistema, ele geralmente descreve o que a IA vende
+        // Usamos isso como base para o Produto/Serviço
+        setValue("produtoPrincipal", initialData.system_prompt);
+      }
     }
   }, [initialData, workspace, setValue]);
 

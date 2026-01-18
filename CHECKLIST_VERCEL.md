@@ -144,3 +144,6 @@ Baseado na imagem do dashboard:
 
 Se encontrar algum problema, consulte a seção de Troubleshooting acima ou o guia completo de deploy.
 
+
+
+
