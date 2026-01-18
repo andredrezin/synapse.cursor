@@ -250,14 +250,6 @@ const App = () => (
                 }
               />
               <Route
-                path="/dashboard/setup-ia"
-                element={
-                  <ProtectedRoute>
-                    <SetupIA />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
                 path="/dashboard/ranking"
                 element={
                   <ProtectedRoute>

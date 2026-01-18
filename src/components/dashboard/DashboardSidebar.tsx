@@ -100,12 +100,7 @@ const getAdminMenuSections = (t: any): MenuSection[] => [
         adminOnly: true,
         requiredPlan: "premium",
       },
-      {
-        icon: Sparkles,
-        labelKey: "nav.setupIA",
-        href: "/dashboard/setup-ia",
-        adminOnly: true,
-      },
+
       {
         icon: BrainCircuit,
         labelKey: "nav.aiAnalytics",
