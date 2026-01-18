@@ -668,11 +668,6 @@ const AISettings = () => {
                       <SetupIAForm
                         onSubmit={handleGenerateFAQs}
                         loading={isGeneratingFAQs}
-                        initialData={{
-                          ai_name: settings?.ai_name || "",
-                          ai_personality: settings?.ai_personality || "",
-                          system_prompt: settings?.system_prompt || "",
-                        }}
                       />
                     </DialogContent>
                   </Dialog>

@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -26,54 +25,19 @@ type FormData = z.infer<typeof formSchema>;
 interface SetupIAFormProps {
   onSubmit: (dados: any) => Promise<void>;
   loading: boolean;
-  initialData?: Partial<FormData> & {
-    ai_name?: string;
-    ai_personality?: string;
-    system_prompt?: string;
-  };
 }
 
-export default function SetupIAForm({
-  onSubmit,
-  loading,
-  initialData,
-}: SetupIAFormProps) {
+export default function SetupIAForm({ onSubmit, loading }: SetupIAFormProps) {
   const { workspace } = useAuth();
   const {
     register,
     handleSubmit,
-    setValue,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      nomeEmpresa: workspace?.name || "",
-    },
   });
 
-  useEffect(() => {
-    if (initialData) {
-      if (initialData.ai_name && !workspace?.name) {
-        setValue("nomeEmpresa", initialData.ai_name);
-      } else if (workspace?.name) {
-        setValue("nomeEmpresa", workspace.name);
-      }
-
-      if (initialData.ai_personality) {
-        setValue("tipoNegocio", initialData.ai_personality);
-      }
-
-      // Tentativa de inferir produto do system_prompt se disponível
-      if (initialData.system_prompt) {
-        // Se temos um prompt de sistema, ele geralmente descreve o que a IA vende
-        // Usamos isso como base para o Produto/Serviço
-        setValue("produtoPrincipal", initialData.system_prompt);
-      }
-    }
-  }, [initialData, workspace, setValue]);
-
   const handleFormSubmit = async (data: FormData) => {
-    // Formata os dados para enviar ao n8n
     const payload = {
       workspace_id: workspace?.id,
       tenant_name: workspace?.name || "Cliente",
@@ -101,7 +65,6 @@ ${data.casesSucesso ? `Cases de Sucesso: ${data.casesSucesso}` : ""}
 
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
-      {/* Nome da Empresa */}
       <div>
         <Label htmlFor="nomeEmpresa">Nome da Empresa *</Label>
         <Input
@@ -117,7 +80,6 @@ ${data.casesSucesso ? `Cases de Sucesso: ${data.casesSucesso}` : ""}
         )}
       </div>
 
-      {/* Tipo de Negócio */}
       <div>
         <Label htmlFor="tipoNegocio">Tipo de Negócio *</Label>
         <Input
@@ -133,12 +95,11 @@ ${data.casesSucesso ? `Cases de Sucesso: ${data.casesSucesso}` : ""}
         )}
       </div>
 
-      {/* Produto Principal */}
       <div>
         <Label htmlFor="produtoPrincipal">Produto/Serviço Principal *</Label>
         <Textarea
           id="produtoPrincipal"
-          placeholder="Ex: Atendimento automatizado via WhatsApp com IA que aprende com cada interação"
+          placeholder="Ex: Atendimento automatizado via WhatsApp com IA"
           rows={3}
           {...register("produtoPrincipal")}
           disabled={loading}
@@ -150,12 +111,11 @@ ${data.casesSucesso ? `Cases de Sucesso: ${data.casesSucesso}` : ""}
         )}
       </div>
 
-      {/* Preços */}
       <div>
         <Label htmlFor="precos">Preços *</Label>
         <Input
           id="precos"
-          placeholder="Ex: A partir de R$ 299/mês, Plano Pro R$ 599/mês"
+          placeholder="Ex: A partir de R$ 299/mês"
           {...register("precos")}
           disabled={loading}
         />
@@ -164,13 +124,12 @@ ${data.casesSucesso ? `Cases de Sucesso: ${data.casesSucesso}` : ""}
         )}
       </div>
 
-      {/* Benefícios */}
       <div>
         <Label htmlFor="beneficios">Benefícios (um por linha) *</Label>
         <Textarea
           id="beneficios"
-          placeholder="Atendimento 24/7&#10;Reduz custos em até 70%&#10;Aumenta conversão em 300%&#10;IA que aprende sozinha"
-          rows={5}
+          placeholder="Atendimento 24/7&#10;Reduz custos em até 70%&#10;Aumenta conversão"
+          rows={4}
           {...register("beneficios")}
           disabled={loading}
         />
@@ -181,13 +140,12 @@ ${data.casesSucesso ? `Cases de Sucesso: ${data.casesSucesso}` : ""}
         )}
       </div>
 
-      {/* Diferenciais */}
       <div>
         <Label htmlFor="diferenciais">Diferenciais (um por linha) *</Label>
         <Textarea
           id="diferenciais"
-          placeholder="Única IA que evolui com vendas reais&#10;Setup em menos de 24h&#10;Suporte especializado incluso"
-          rows={4}
+          placeholder="IA que evolui sozinha&#10;Setup em 24h&#10;Suporte incluso"
+          rows={3}
           {...register("diferenciais")}
           disabled={loading}
         />
@@ -198,7 +156,6 @@ ${data.casesSucesso ? `Cases de Sucesso: ${data.casesSucesso}` : ""}
         )}
       </div>
 
-      {/* Horário de Suporte (Opcional) */}
       <div>
         <Label htmlFor="horarioSuporte">Horário de Suporte (opcional)</Label>
         <Input
@@ -209,29 +166,26 @@ ${data.casesSucesso ? `Cases de Sucesso: ${data.casesSucesso}` : ""}
         />
       </div>
 
-      {/* Integrações (Opcional) */}
       <div>
         <Label htmlFor="integracoes">Integrações (opcional)</Label>
         <Input
           id="integracoes"
-          placeholder="Ex: WhatsApp, CRM, Google Sheets, Zapier"
+          placeholder="Ex: WhatsApp, CRM, Zapier"
           {...register("integracoes")}
           disabled={loading}
         />
       </div>
 
-      {/* Cases de Sucesso (Opcional) */}
       <div>
         <Label htmlFor="casesSucesso">Cases de Sucesso (opcional)</Label>
         <Input
           id="casesSucesso"
-          placeholder="Ex: Mais de 500 empresas atendidas, ROI médio de 400%"
+          placeholder="Ex: 500+ empresas atendidas, ROI de 400%"
           {...register("casesSucesso")}
           disabled={loading}
         />
       </div>
 
-      {/* Botão Submit */}
       <Button type="submit" className="w-full" size="lg" disabled={loading}>
         {loading ? (
           <>
