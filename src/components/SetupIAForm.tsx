@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -25,17 +26,44 @@ type FormData = z.infer<typeof formSchema>;
 interface SetupIAFormProps {
   onSubmit: (dados: any) => Promise<void>;
   loading: boolean;
+  initialData?: Partial<FormData> & {
+    ai_name?: string;
+    ai_personality?: string;
+    system_prompt?: string;
+  };
 }
 
-export default function SetupIAForm({ onSubmit, loading }: SetupIAFormProps) {
+export default function SetupIAForm({
+  onSubmit,
+  loading,
+  initialData,
+}: SetupIAFormProps) {
   const { workspace } = useAuth();
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(formSchema),
+    defaultValues: {
+      nomeEmpresa: workspace?.name || "",
+    },
   });
+
+  useEffect(() => {
+    if (initialData) {
+      if (initialData.ai_name && !workspace?.name) {
+        setValue("nomeEmpresa", initialData.ai_name);
+      } else if (workspace?.name) {
+        setValue("nomeEmpresa", workspace.name);
+      }
+
+      if (initialData.ai_personality) {
+        setValue("tipoNegocio", initialData.ai_personality);
+      }
+    }
+  }, [initialData, workspace, setValue]);
 
   const handleFormSubmit = async (data: FormData) => {
     // Formata os dados para enviar ao n8n

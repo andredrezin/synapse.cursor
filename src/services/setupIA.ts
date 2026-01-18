@@ -1,5 +1,5 @@
 const N8N_WEBHOOK_URL =
-  "https://n8n.synapseautomacao.com.br/webhook/setup-criar-faqs";
+  "https://n8n.synapseautomacao.com.br/webhook/agente-IA-faqs";
 
 export interface SetupIAPayload {
   workspace_id: string;
