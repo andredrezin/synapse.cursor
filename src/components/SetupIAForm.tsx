@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -22,22 +23,64 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
+interface CompanyProfile {
+  nomeEmpresa?: string;
+  tipoNegocio?: string;
+  produtoPrincipal?: string;
+  precos?: string;
+  beneficios?: string;
+  diferenciais?: string;
+  horarioSuporte?: string;
+  integracoes?: string;
+  casesSucesso?: string;
+}
+
 interface SetupIAFormProps {
   onSubmit: (dados: any) => Promise<void>;
   loading: boolean;
+  companyProfile?: CompanyProfile;
+  onSaveProfile?: (profile: CompanyProfile) => void;
 }
 
-export default function SetupIAForm({ onSubmit, loading }: SetupIAFormProps) {
+export default function SetupIAForm({
+  onSubmit,
+  loading,
+  companyProfile,
+  onSaveProfile,
+}: SetupIAFormProps) {
   const { workspace } = useAuth();
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(formSchema),
   });
 
+  // Load saved profile when available
+  useEffect(() => {
+    if (companyProfile && Object.keys(companyProfile).length > 0) {
+      reset({
+        nomeEmpresa: companyProfile.nomeEmpresa || "",
+        tipoNegocio: companyProfile.tipoNegocio || "",
+        produtoPrincipal: companyProfile.produtoPrincipal || "",
+        precos: companyProfile.precos || "",
+        beneficios: companyProfile.beneficios || "",
+        diferenciais: companyProfile.diferenciais || "",
+        horarioSuporte: companyProfile.horarioSuporte || "",
+        integracoes: companyProfile.integracoes || "",
+        casesSucesso: companyProfile.casesSucesso || "",
+      });
+    }
+  }, [companyProfile, reset]);
+
   const handleFormSubmit = async (data: FormData) => {
+    // Save profile for future use
+    if (onSaveProfile) {
+      onSaveProfile(data);
+    }
+
     const payload = {
       workspace_id: workspace?.id,
       tenant_name: workspace?.name || "Cliente",
@@ -190,7 +233,7 @@ ${data.casesSucesso ? `Cases de Sucesso: ${data.casesSucesso}` : ""}
         {loading ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Gerando 30 FAQs...
+            Gerando FAQs...
           </>
         ) : (
           "🚀 Gerar 30 FAQs Automaticamente"

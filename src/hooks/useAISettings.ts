@@ -1,7 +1,19 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+
+interface CompanyProfile {
+  nomeEmpresa?: string;
+  tipoNegocio?: string;
+  produtoPrincipal?: string;
+  precos?: string;
+  beneficios?: string;
+  diferenciais?: string;
+  horarioSuporte?: string;
+  integracoes?: string;
+  casesSucesso?: string;
+}
 
 interface AISettings {
   id: string;
@@ -20,6 +32,7 @@ interface AISettings {
   timezone: string | null;
   max_context_messages: number | null;
   transfer_after_messages: number | null;
+  company_profile: CompanyProfile | null;
   created_at: string;
   updated_at: string;
 }
@@ -39,6 +52,7 @@ interface UpdateAISettingsData {
   timezone?: string;
   max_context_messages?: number;
   transfer_after_messages?: number;
+  company_profile?: CompanyProfile;
 }
 
 export const useAISettings = () => {
@@ -48,15 +62,19 @@ export const useAISettings = () => {
   const workspaceId = workspace?.id;
 
   // Fetch AI settings
-  const { data: settings, isLoading, error } = useQuery({
-    queryKey: ['ai-settings', workspaceId],
+  const {
+    data: settings,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["ai-settings", workspaceId],
     queryFn: async () => {
       if (!workspaceId) return null;
-      
+
       const { data, error } = await supabase
-        .from('ai_settings')
-        .select('*')
-        .eq('workspace_id', workspaceId)
+        .from("ai_settings")
+        .select("*")
+        .eq("workspace_id", workspaceId)
         .maybeSingle();
 
       if (error) throw error;
@@ -68,24 +86,24 @@ export const useAISettings = () => {
   // Create or update settings
   const updateSettings = useMutation({
     mutationFn: async (data: UpdateAISettingsData) => {
-      if (!workspaceId) throw new Error('No workspace');
+      if (!workspaceId) throw new Error("No workspace");
 
       // Check if settings exist
       const { data: existing } = await supabase
-        .from('ai_settings')
-        .select('id')
-        .eq('workspace_id', workspaceId)
+        .from("ai_settings")
+        .select("id")
+        .eq("workspace_id", workspaceId)
         .maybeSingle();
 
       if (existing) {
         // Update
         const { data: result, error } = await supabase
-          .from('ai_settings')
+          .from("ai_settings")
           .update({
             ...data,
             updated_at: new Date().toISOString(),
           })
-          .eq('id', existing.id)
+          .eq("id", existing.id)
           .select()
           .single();
 
@@ -94,7 +112,7 @@ export const useAISettings = () => {
       } else {
         // Create
         const { data: result, error } = await supabase
-          .from('ai_settings')
+          .from("ai_settings")
           .insert({
             ...data,
             workspace_id: workspaceId,
@@ -107,46 +125,54 @@ export const useAISettings = () => {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['ai-settings', workspaceId] });
-      toast({ title: 'Configurações de IA salvas!' });
+      queryClient.invalidateQueries({ queryKey: ["ai-settings", workspaceId] });
+      toast({ title: "Configurações de IA salvas!" });
     },
     onError: (error) => {
-      toast({ title: 'Erro ao salvar configurações', description: error.message, variant: 'destructive' });
+      toast({
+        title: "Erro ao salvar configurações",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 
   // Toggle AI enabled
   const toggleAI = useMutation({
     mutationFn: async (enabled: boolean) => {
-      if (!workspaceId) throw new Error('No workspace');
+      if (!workspaceId) throw new Error("No workspace");
 
       const { data: existing } = await supabase
-        .from('ai_settings')
-        .select('id')
-        .eq('workspace_id', workspaceId)
+        .from("ai_settings")
+        .select("id")
+        .eq("workspace_id", workspaceId)
         .maybeSingle();
 
       if (existing) {
         const { error } = await supabase
-          .from('ai_settings')
+          .from("ai_settings")
           .update({ is_enabled: enabled, updated_at: new Date().toISOString() })
-          .eq('id', existing.id);
+          .eq("id", existing.id);
 
         if (error) throw error;
       } else {
         const { error } = await supabase
-          .from('ai_settings')
+          .from("ai_settings")
           .insert({ workspace_id: workspaceId, is_enabled: enabled });
 
         if (error) throw error;
       }
     },
     onSuccess: (_, enabled) => {
-      queryClient.invalidateQueries({ queryKey: ['ai-settings', workspaceId] });
-      toast({ title: enabled ? 'IA ativada!' : 'IA desativada' });
+      queryClient.invalidateQueries({ queryKey: ["ai-settings", workspaceId] });
+      toast({ title: enabled ? "IA ativada!" : "IA desativada" });
     },
     onError: (error) => {
-      toast({ title: 'Erro ao alterar status da IA', description: error.message, variant: 'destructive' });
+      toast({
+        title: "Erro ao alterar status da IA",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 

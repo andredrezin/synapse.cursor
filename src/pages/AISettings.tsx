@@ -668,6 +668,10 @@ const AISettings = () => {
                       <SetupIAForm
                         onSubmit={handleGenerateFAQs}
                         loading={isGeneratingFAQs}
+                        companyProfile={settings?.company_profile || undefined}
+                        onSaveProfile={(profile) => {
+                          updateSettings.mutate({ company_profile: profile });
+                        }}
                       />
                     </DialogContent>
                   </Dialog>
