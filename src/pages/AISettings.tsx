@@ -665,14 +665,7 @@ const AISettings = () => {
                           Preencha os dados e a IA criará FAQs automaticamente.
                         </DialogDescription>
                       </DialogHeader>
-                      <SetupIAForm
-                        onSubmit={handleGenerateFAQs}
-                        loading={isGeneratingFAQs}
-                        companyProfile={settings?.company_profile || undefined}
-                        onSaveProfile={(profile) => {
-                          updateSettings.mutate({ company_profile: profile });
-                        }}
-                      />
+                      <SetupIAForm onSuccess={() => setIsSetupOpen(false)} />
                     </DialogContent>
                   </Dialog>
                 </CardHeader>

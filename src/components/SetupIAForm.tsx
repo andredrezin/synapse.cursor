@@ -7,48 +7,33 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useCompanyProfile, CompanyProfile } from "@/hooks/useCompanyProfile";
 
 const formSchema = z.object({
-  nomeEmpresa: z.string().min(2, "Nome muito curto"),
-  tipoNegocio: z.string().min(5, "Descreva melhor seu negócio"),
-  produtoPrincipal: z.string().min(10, "Descreva melhor seu produto"),
+  nome_empresa: z.string().min(2, "Nome muito curto"),
+  tipo_negocio: z.string().min(5, "Descreva melhor seu negócio"),
+  produto_principal: z.string().min(10, "Descreva melhor seu produto"),
   precos: z.string().min(5, "Informe ao menos um preço"),
   beneficios: z.string().min(20, "Liste ao menos 3 benefícios"),
   diferenciais: z.string().min(20, "Liste ao menos 2 diferenciais"),
-  horarioSuporte: z.string().optional(),
+  horario_suporte: z.string().optional(),
   integracoes: z.string().optional(),
-  casesSucesso: z.string().optional(),
+  cases_sucesso: z.string().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
 
-interface CompanyProfile {
-  nomeEmpresa?: string;
-  tipoNegocio?: string;
-  produtoPrincipal?: string;
-  precos?: string;
-  beneficios?: string;
-  diferenciais?: string;
-  horarioSuporte?: string;
-  integracoes?: string;
-  casesSucesso?: string;
-}
-
 interface SetupIAFormProps {
-  onSubmit: (dados: any) => Promise<void>;
-  loading: boolean;
-  companyProfile?: CompanyProfile;
-  onSaveProfile?: (profile: CompanyProfile) => void;
+  onSuccess?: () => void;
 }
 
-export default function SetupIAForm({
-  onSubmit,
-  loading,
-  companyProfile,
-  onSaveProfile,
-}: SetupIAFormProps) {
-  const { workspace } = useAuth();
+export default function SetupIAForm({ onSuccess }: SetupIAFormProps) {
+  const {
+    profile,
+    isLoading: profileLoading,
+    saveProfile,
+  } = useCompanyProfile();
+
   const {
     register,
     handleSubmit,
@@ -60,107 +45,91 @@ export default function SetupIAForm({
 
   // Load saved profile when available
   useEffect(() => {
-    if (companyProfile && Object.keys(companyProfile).length > 0) {
+    if (profile) {
       reset({
-        nomeEmpresa: companyProfile.nomeEmpresa || "",
-        tipoNegocio: companyProfile.tipoNegocio || "",
-        produtoPrincipal: companyProfile.produtoPrincipal || "",
-        precos: companyProfile.precos || "",
-        beneficios: companyProfile.beneficios || "",
-        diferenciais: companyProfile.diferenciais || "",
-        horarioSuporte: companyProfile.horarioSuporte || "",
-        integracoes: companyProfile.integracoes || "",
-        casesSucesso: companyProfile.casesSucesso || "",
+        nome_empresa: profile.nome_empresa || "",
+        tipo_negocio: profile.tipo_negocio || "",
+        produto_principal: profile.produto_principal || "",
+        precos: profile.precos || "",
+        beneficios: profile.beneficios || "",
+        diferenciais: profile.diferenciais || "",
+        horario_suporte: profile.horario_suporte || "",
+        integracoes: profile.integracoes || "",
+        cases_sucesso: profile.cases_sucesso || "",
       });
     }
-  }, [companyProfile, reset]);
+  }, [profile, reset]);
 
   const handleFormSubmit = async (data: FormData) => {
-    // Save profile for future use
-    if (onSaveProfile) {
-      onSaveProfile(data);
-    }
-
-    const payload = {
-      workspace_id: workspace?.id,
-      tenant_name: workspace?.name || "Cliente",
-      informacoes: `
-Nome da Empresa: ${data.nomeEmpresa}
-Tipo de Negócio: ${data.tipoNegocio}
-Produto Principal: ${data.produtoPrincipal}
-
-Preços: ${data.precos}
-
-Benefícios:
-${data.beneficios}
-
-Diferenciais:
-${data.diferenciais}
-
-${data.horarioSuporte ? `Horário de Suporte: ${data.horarioSuporte}` : ""}
-${data.integracoes ? `Integrações: ${data.integracoes}` : ""}
-${data.casesSucesso ? `Cases de Sucesso: ${data.casesSucesso}` : ""}
-      `.trim(),
-    };
-
-    await onSubmit(payload);
+    await saveProfile.mutateAsync(data);
+    onSuccess?.();
   };
+
+  const isLoading = profileLoading || saveProfile.isPending;
 
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
+      {profile && (
+        <div className="text-sm text-muted-foreground bg-muted/50 rounded-lg p-3 mb-4">
+          ✅ Perfil existente carregado. Edite e salve para atualizar as FAQs
+          automaticamente.
+        </div>
+      )}
+
       <div>
-        <Label htmlFor="nomeEmpresa">Nome da Empresa *</Label>
+        <Label htmlFor="nome_empresa">Nome da Empresa *</Label>
         <Input
-          id="nomeEmpresa"
-          placeholder="Ex: Synapse Automações"
-          {...register("nomeEmpresa")}
-          disabled={loading}
+          id="nome_empresa"
+          placeholder="Ex: Synapse"
+          {...register("nome_empresa")}
+          disabled={isLoading}
         />
-        {errors.nomeEmpresa && (
+        {errors.nome_empresa && (
           <p className="text-sm text-red-500 mt-1">
-            {errors.nomeEmpresa.message}
+            {errors.nome_empresa.message}
           </p>
         )}
       </div>
 
       <div>
-        <Label htmlFor="tipoNegocio">Tipo de Negócio *</Label>
+        <Label htmlFor="tipo_negocio">Tipo de Negócio *</Label>
         <Input
-          id="tipoNegocio"
-          placeholder="Ex: SaaS de atendimento automatizado"
-          {...register("tipoNegocio")}
-          disabled={loading}
+          id="tipo_negocio"
+          placeholder="Ex: Plataforma de inteligência comercial para WhatsApp"
+          {...register("tipo_negocio")}
+          disabled={isLoading}
         />
-        {errors.tipoNegocio && (
+        {errors.tipo_negocio && (
           <p className="text-sm text-red-500 mt-1">
-            {errors.tipoNegocio.message}
+            {errors.tipo_negocio.message}
           </p>
         )}
       </div>
 
       <div>
-        <Label htmlFor="produtoPrincipal">Produto/Serviço Principal *</Label>
+        <Label htmlFor="produto_principal">Produto/Serviço Principal *</Label>
         <Textarea
-          id="produtoPrincipal"
-          placeholder="Ex: Atendimento automatizado via WhatsApp com IA"
+          id="produto_principal"
+          placeholder="Ex: Sistema de monitoramento e otimização de vendas via WhatsApp com IA"
           rows={3}
-          {...register("produtoPrincipal")}
-          disabled={loading}
+          {...register("produto_principal")}
+          disabled={isLoading}
         />
-        {errors.produtoPrincipal && (
+        {errors.produto_principal && (
           <p className="text-sm text-red-500 mt-1">
-            {errors.produtoPrincipal.message}
+            {errors.produto_principal.message}
           </p>
         )}
       </div>
 
       <div>
         <Label htmlFor="precos">Preços *</Label>
-        <Input
+        <Textarea
           id="precos"
-          placeholder="Ex: A partir de R$ 299/mês"
+          placeholder="Básico: R$ 297/mês&#10;Profissional: R$ 497/mês&#10;Premium: R$ 899,90/mês"
+          rows={3}
           {...register("precos")}
-          disabled={loading}
+          disabled={isLoading}
         />
         {errors.precos && (
           <p className="text-sm text-red-500 mt-1">{errors.precos.message}</p>
@@ -171,10 +140,10 @@ ${data.casesSucesso ? `Cases de Sucesso: ${data.casesSucesso}` : ""}
         <Label htmlFor="beneficios">Benefícios (um por linha) *</Label>
         <Textarea
           id="beneficios"
-          placeholder="Atendimento 24/7&#10;Reduz custos em até 70%&#10;Aumenta conversão"
+          placeholder="Visibilidade completa das conversas&#10;IA que analisa qualidade das mensagens&#10;Qualificação automática de leads"
           rows={4}
           {...register("beneficios")}
-          disabled={loading}
+          disabled={isLoading}
         />
         {errors.beneficios && (
           <p className="text-sm text-red-500 mt-1">
@@ -187,10 +156,10 @@ ${data.casesSucesso ? `Cases de Sucesso: ${data.casesSucesso}` : ""}
         <Label htmlFor="diferenciais">Diferenciais (um por linha) *</Label>
         <Textarea
           id="diferenciais"
-          placeholder="IA que evolui sozinha&#10;Setup em 24h&#10;Suporte incluso"
+          placeholder="Pixel de conversão para atribuição precisa&#10;IA como copiloto do vendedor&#10;Aprendizado contínuo (RAG)"
           rows={3}
           {...register("diferenciais")}
-          disabled={loading}
+          disabled={isLoading}
         />
         {errors.diferenciais && (
           <p className="text-sm text-red-500 mt-1">
@@ -200,12 +169,12 @@ ${data.casesSucesso ? `Cases de Sucesso: ${data.casesSucesso}` : ""}
       </div>
 
       <div>
-        <Label htmlFor="horarioSuporte">Horário de Suporte (opcional)</Label>
+        <Label htmlFor="horario_suporte">Horário de Suporte (opcional)</Label>
         <Input
-          id="horarioSuporte"
+          id="horario_suporte"
           placeholder="Ex: Segunda a sexta, 9h às 18h"
-          {...register("horarioSuporte")}
-          disabled={loading}
+          {...register("horario_suporte")}
+          disabled={isLoading}
         />
       </div>
 
@@ -213,30 +182,33 @@ ${data.casesSucesso ? `Cases de Sucesso: ${data.casesSucesso}` : ""}
         <Label htmlFor="integracoes">Integrações (opcional)</Label>
         <Input
           id="integracoes"
-          placeholder="Ex: WhatsApp, CRM, Zapier"
+          placeholder="Ex: WhatsApp, Evolution API, Meta Official API"
           {...register("integracoes")}
-          disabled={loading}
+          disabled={isLoading}
         />
       </div>
 
       <div>
-        <Label htmlFor="casesSucesso">Cases de Sucesso (opcional)</Label>
-        <Input
-          id="casesSucesso"
-          placeholder="Ex: 500+ empresas atendidas, ROI de 400%"
-          {...register("casesSucesso")}
-          disabled={loading}
+        <Label htmlFor="cases_sucesso">Cases de Sucesso (opcional)</Label>
+        <Textarea
+          id="cases_sucesso"
+          placeholder="Potencial de aumento de conversão entre 20% e 35%, conforme benchmark de mercado"
+          rows={2}
+          {...register("cases_sucesso")}
+          disabled={isLoading}
         />
       </div>
 
-      <Button type="submit" className="w-full" size="lg" disabled={loading}>
-        {loading ? (
+      <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
+        {isLoading ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Gerando FAQs...
+            Salvando e gerando FAQs...
           </>
+        ) : profile ? (
+          "💾 Atualizar Perfil e Regenerar FAQs"
         ) : (
-          "🚀 Gerar 30 FAQs Automaticamente"
+          "🚀 Salvar Perfil e Gerar FAQs"
         )}
       </Button>
     </form>
