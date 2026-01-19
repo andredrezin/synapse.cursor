@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -6,8 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Loader2 } from "lucide-react";
-import { useCompanyProfile, CompanyProfile } from "@/hooks/useCompanyProfile";
+import { Loader2, CheckCircle2 } from "lucide-react";
+import { useCompanyProfile } from "@/hooks/useCompanyProfile";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+
+const N8N_WEBHOOK_URL =
+  "https://n8n.synapseautomacao.com.br/webhook/agente-IA-faqs";
 
 const formSchema = z.object({
   nome_empresa: z.string().min(2, "Nome muito curto"),
@@ -28,11 +33,15 @@ interface SetupIAFormProps {
 }
 
 export default function SetupIAForm({ onSuccess }: SetupIAFormProps) {
+  const { workspace } = useAuth();
+  const { toast } = useToast();
   const {
     profile,
     isLoading: profileLoading,
     saveProfile,
   } = useCompanyProfile();
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [faqsGenerated, setFaqsGenerated] = useState(false);
 
   const {
     register,
@@ -43,7 +52,6 @@ export default function SetupIAForm({ onSuccess }: SetupIAFormProps) {
     resolver: zodResolver(formSchema),
   });
 
-  // Load saved profile when available
   useEffect(() => {
     if (profile) {
       reset({
@@ -61,18 +69,80 @@ export default function SetupIAForm({ onSuccess }: SetupIAFormProps) {
   }, [profile, reset]);
 
   const handleFormSubmit = async (data: FormData) => {
-    await saveProfile.mutateAsync(data);
-    onSuccess?.();
+    setIsGenerating(true);
+    setFaqsGenerated(false);
+
+    try {
+      // 1. Salvar perfil no Supabase
+      await saveProfile.mutateAsync(data);
+
+      // 2. Chamar webhook n8n para gerar FAQs
+      const payload = {
+        workspace_id: workspace?.id,
+        tenant_name: data.nome_empresa,
+        informacoes: `
+Nome da Empresa: ${data.nome_empresa}
+Tipo de Negócio: ${data.tipo_negocio}
+Produto Principal: ${data.produto_principal}
+
+Preços: ${data.precos}
+
+Benefícios:
+${data.beneficios}
+
+Diferenciais:
+${data.diferenciais}
+
+${data.horario_suporte ? `Horário de Suporte: ${data.horario_suporte}` : ""}
+${data.integracoes ? `Integrações: ${data.integracoes}` : ""}
+${data.cases_sucesso ? `Cases de Sucesso: ${data.cases_sucesso}` : ""}
+        `.trim(),
+      };
+
+      const response = await fetch(N8N_WEBHOOK_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error("Erro ao gerar FAQs no servidor");
+      }
+
+      const result = await response.json();
+
+      setFaqsGenerated(true);
+      toast({
+        title: "✅ FAQs geradas com sucesso!",
+        description: `${result.total || 30} perguntas e respostas criadas na base de conhecimento.`,
+      });
+
+      onSuccess?.();
+    } catch (error) {
+      toast({
+        title: "Erro ao gerar FAQs",
+        description: error instanceof Error ? error.message : "Tente novamente",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
-  const isLoading = profileLoading || saveProfile.isPending;
+  const isLoading = profileLoading || saveProfile.isPending || isGenerating;
 
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
-      {profile && (
+      {profile && !isGenerating && (
         <div className="text-sm text-muted-foreground bg-muted/50 rounded-lg p-3 mb-4">
-          ✅ Perfil existente carregado. Edite e salve para atualizar as FAQs
-          automaticamente.
+          ✅ Perfil existente carregado. Edite e salve para atualizar as FAQs.
+        </div>
+      )}
+
+      {faqsGenerated && (
+        <div className="text-sm text-green-600 bg-green-50 dark:bg-green-950 rounded-lg p-3 mb-4 flex items-center gap-2">
+          <CheckCircle2 className="w-5 h-5" />
+          FAQs geradas e salvas na base de conhecimento!
         </div>
       )}
 
@@ -200,10 +270,15 @@ export default function SetupIAForm({ onSuccess }: SetupIAFormProps) {
       </div>
 
       <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
-        {isLoading ? (
+        {isGenerating ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Salvando e gerando FAQs...
+            Gerando FAQs... (Aguarde ~30s)
+          </>
+        ) : saveProfile.isPending ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Salvando perfil...
           </>
         ) : profile ? (
           "💾 Atualizar Perfil e Regenerar FAQs"
