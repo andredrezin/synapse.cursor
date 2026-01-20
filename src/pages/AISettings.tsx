@@ -47,6 +47,7 @@ import {
   Users,
   HelpCircle,
   Package,
+  CheckCircle2,
 } from "lucide-react";
 import { useAISettings } from "@/hooks/useAISettings";
 import { useAITraining } from "@/hooks/useAITraining";
@@ -361,17 +362,40 @@ const AISettings = () => {
                 </div>
 
                 {/* Info about learning */}
-                <div className="flex items-start gap-3 p-3 rounded-lg bg-primary/10 border border-primary/20">
-                  <GraduationCap className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                <div
+                  className={`flex items-start gap-3 p-3 rounded-lg border ${
+                    trainingStatus?.faqs_detected &&
+                    trainingStatus?.faqs_detected > 0
+                      ? "bg-green-500/10 border-green-500/20"
+                      : "bg-primary/10 border-primary/20"
+                  }`}
+                >
+                  {trainingStatus?.faqs_detected &&
+                  trainingStatus?.faqs_detected > 0 ? (
+                    <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
+                  ) : (
+                    <GraduationCap className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                  )}
+
                   <div className="text-sm">
-                    <p className="font-medium text-primary">
-                      RAG em construção
+                    <p
+                      className={`font-medium ${
+                        trainingStatus?.faqs_detected &&
+                        trainingStatus?.faqs_detected > 0
+                          ? "text-green-600"
+                          : "text-primary"
+                      }`}
+                    >
+                      {trainingStatus?.faqs_detected &&
+                      trainingStatus?.faqs_detected > 0
+                        ? "Base de Conhecimento Ativa (RAG)"
+                        : "RAG em construção"}
                     </p>
                     <p className="text-muted-foreground">
-                      Enquanto você monitora seus vendedores, a IA está
-                      aprendendo FAQs, padrões de resposta, informações da
-                      empresa e como tratar objeções. Esses dados serão usados
-                      quando você ativar o Chatbot Premium.
+                      {trainingStatus?.faqs_detected &&
+                      trainingStatus?.faqs_detected > 0
+                        ? `${trainingStatus.faqs_detected} itens de conhecimento prontos para uso pelo Chatbot.`
+                        : "Enquanto você monitora seus vendedores, a IA está aprendendo FAQs e padrões de resposta."}
                     </p>
                   </div>
                 </div>
