@@ -400,26 +400,48 @@ export const useAITraining = () => {
     ) || {};
 
   // Merge legacy status with real RAG stats for UI consumption
-  const mergedStatus = trainingStatus
-    ? {
-        ...trainingStatus,
-        faqs_detected: ragStats?.faqs || trainingStatus.faqs_detected,
-        company_info_extracted:
-          ragStats?.company_info || trainingStatus.company_info_extracted,
-        objections_learned:
-          ragStats?.objections || trainingStatus.objections_learned,
-        // Add custom field if needed or hijack existing ones
-      }
-    : null;
+  const baseStatus =
+    trainingStatus ||
+    ({
+      id: "temp-id",
+      workspace_id: workspaceId || "",
+      status: "learning",
+      started_at: new Date().toISOString(),
+      ready_at: null,
+      activated_at: null,
+      activated_by: null,
+      min_days_required: 7,
+      min_messages_required: 100,
+      messages_analyzed: 0,
+      faqs_detected: 0,
+      seller_patterns_learned: 0,
+      company_info_extracted: 0,
+      objections_learned: 0,
+      confidence_score: 0,
+      linked_whatsapp_id: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    } as AITrainingStatus);
+
+  const mergedStatus = {
+    ...baseStatus,
+    faqs_detected: ragStats?.faqs || baseStatus.faqs_detected,
+    company_info_extracted:
+      ragStats?.company_info || baseStatus.company_info_extracted,
+    objections_learned: ragStats?.objections || baseStatus.objections_learned,
+    seller_patterns_learned:
+      ragStats?.products || baseStatus.seller_patterns_learned,
+    messages_analyzed: ragStats?.total || baseStatus.messages_analyzed,
+  };
 
   return {
-    trainingStatus: mergedStatus, // Return merged status so UI updates automatically
+    trainingStatus: mergedStatus,
     progress: {
       is_ready: (ragStats?.total || 0) > 0,
-      total_progress: 100,
+      total_progress: (ragStats?.total || 0) > 0 ? 100 : 0,
       days_elapsed: 0,
       messages_progress: 100,
-    }, // Mock progress if RAG has content
+    },
     learnedContent,
     contentStats,
     isLoading: isLoadingStatus || isLoadingContent,
@@ -428,9 +450,9 @@ export const useAITraining = () => {
     togglePause,
     approveContent,
     deleteContent,
-    isLearning: trainingStatus?.status === "learning",
-    isReady: (ragStats?.total || 0) > 0, // Ready if we have content!
-    isActive: trainingStatus?.status === "active",
-    isPaused: trainingStatus?.status === "paused",
+    isLearning: mergedStatus.status === "learning",
+    isReady: (ragStats?.total || 0) > 0,
+    isActive: mergedStatus.status === "active",
+    isPaused: mergedStatus.status === "paused",
   };
 };
