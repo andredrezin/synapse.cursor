@@ -38,7 +38,9 @@ import SellerDashboard from "./pages/SellerDashboard";
 import Ranking from "./pages/Ranking";
 import LeadDistributionSettings from "./pages/LeadDistributionSettings";
 import AILearning from "./pages/AILearning";
-import SetupIA from "./pages/SetupIA";
+import Catalog from "./pages/Catalog";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -58,6 +60,8 @@ const App = () => (
               <Route path="/auth/callback" element={<AuthCallback />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/privacidade" element={<PrivacyPolicy />} />
+              <Route path="/termos" element={<TermsOfService />} />
 
               {/* Onboarding - requires auth but not onboarding completion */}
               <Route
@@ -270,6 +274,14 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <ChatRoom />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard/catalog"
+                element={
+                  <ProtectedRoute>
+                    <Catalog />
                   </ProtectedRoute>
                 }
               />
