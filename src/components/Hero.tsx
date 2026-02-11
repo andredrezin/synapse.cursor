@@ -4,11 +4,11 @@ import { Link } from "react-router-dom";
 
 const Hero = () => {
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-44">
       {/* Background glow */}
       <div className="absolute inset-0 bg-gradient-glow opacity-60" />
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-primary/10 rounded-full blur-[120px] animate-pulse-glow" />
-      
+
       <div className="container mx-auto px-6 relative z-10">
         <div className="max-w-4xl mx-auto text-center">
           {/* Badge */}
@@ -18,19 +18,20 @@ const Hero = () => {
               Pixel de Conversão + IA para WhatsApp
             </span>
           </div>
-          
+
           {/* Headline */}
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-black leading-tight mb-6 animate-slide-up delay-100">
             Transforme conversas em{" "}
             <span className="text-gradient">conversões</span>
           </h1>
-          
+
           {/* Subheadline */}
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed animate-slide-up delay-200">
-            Inteligência artificial que analisa, classifica e otimiza cada conversa do seu time de vendas no WhatsApp. 
-            Métricas reais, recomendações acionáveis.
+            Inteligência artificial que analisa, classifica e otimiza cada
+            conversa do seu time de vendas no WhatsApp. Métricas reais,
+            recomendações acionáveis.
           </p>
-          
+
           {/* CTAs */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-slide-up delay-300">
             <Link to="/dashboard">
@@ -44,7 +45,7 @@ const Hero = () => {
               Ver Demonstração
             </Button>
           </div>
-          
+
           {/* Trust badges */}
           <div className="mt-16 flex flex-wrap items-center justify-center gap-8 text-muted-foreground animate-slide-up delay-400">
             <div className="flex items-center gap-2">
@@ -61,7 +62,7 @@ const Hero = () => {
             </div>
           </div>
         </div>
-        
+
         {/* Dashboard Preview */}
         <div className="mt-20 max-w-5xl mx-auto animate-slide-up delay-500">
           <div className="relative rounded-2xl overflow-hidden glass p-1 shadow-2xl">
@@ -100,11 +101,13 @@ const DashboardPreview = () => {
         <p className="text-2xl font-bold text-foreground">R$ 24.5k</p>
         <p className="text-xs text-primary">Meta: 85%</p>
       </div>
-      
+
       {/* Chart area */}
       <div className="col-span-8 glass rounded-lg p-4 h-48">
         <div className="flex items-center justify-between mb-4">
-          <p className="text-sm font-medium text-foreground">Conversões por Canal</p>
+          <p className="text-sm font-medium text-foreground">
+            Conversões por Canal
+          </p>
           <div className="flex gap-4 text-xs">
             <span className="flex items-center gap-1">
               <div className="w-2 h-2 rounded-full bg-primary" />
@@ -119,11 +122,11 @@ const DashboardPreview = () => {
         <div className="flex items-end justify-between h-28 gap-2">
           {[65, 45, 80, 55, 90, 70, 85].map((h, i) => (
             <div key={i} className="flex-1 flex flex-col gap-1">
-              <div 
+              <div
                 className="bg-primary/80 rounded-t"
                 style={{ height: `${h}%` }}
               />
-              <div 
+              <div
                 className="bg-chart-blue/60 rounded-t"
                 style={{ height: `${h * 0.6}%` }}
               />
@@ -131,27 +134,32 @@ const DashboardPreview = () => {
           ))}
         </div>
       </div>
-      
+
       {/* AI insights */}
       <div className="col-span-4 glass rounded-lg p-4 h-48">
-        <p className="text-sm font-medium text-foreground mb-3">Insights da IA</p>
+        <p className="text-sm font-medium text-foreground mb-3">
+          Insights da IA
+        </p>
         <div className="space-y-3">
           <div className="flex items-start gap-2">
             <div className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5" />
             <p className="text-xs text-muted-foreground">
-              <span className="text-foreground font-medium">Lead #234</span> demonstrou alta intenção de compra
+              <span className="text-foreground font-medium">Lead #234</span>{" "}
+              demonstrou alta intenção de compra
             </p>
           </div>
           <div className="flex items-start gap-2">
             <div className="w-1.5 h-1.5 rounded-full bg-chart-orange mt-1.5" />
             <p className="text-xs text-muted-foreground">
-              <span className="text-foreground font-medium">3 objeções</span> detectadas nas últimas 2h
+              <span className="text-foreground font-medium">3 objeções</span>{" "}
+              detectadas nas últimas 2h
             </p>
           </div>
           <div className="flex items-start gap-2">
             <div className="w-1.5 h-1.5 rounded-full bg-chart-blue mt-1.5" />
             <p className="text-xs text-muted-foreground">
-              <span className="text-foreground font-medium">João</span> atingiu 95% de qualidade hoje
+              <span className="text-foreground font-medium">João</span> atingiu
+              95% de qualidade hoje
             </p>
           </div>
         </div>

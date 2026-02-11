@@ -318,7 +318,7 @@ const DashboardSidebar = ({
       )}
     >
       {/* Logo */}
-      <div className="h-48 flex items-center justify-between px-4 border-b border-sidebar-border">
+      <div className="h-36 flex items-center justify-between px-4 border-b border-sidebar-border">
         <Link
           to="/"
           className="flex items-center gap-2"
