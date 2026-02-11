@@ -1,4 +1,4 @@
-# 🚀 SynapseWhats - CRM Inteligente para WhatsApp
+# 🚀 Synapse - CRM Inteligente para WhatsApp
 
 > Sistema completo de gestão de leads e conversas via WhatsApp com Inteligência Artificial integrada
 
@@ -31,6 +31,7 @@
 ## ✨ Funcionalidades
 
 ### 🤖 Inteligência Artificial
+
 - ✅ Chat automático com leads
 - ✅ Análise de sentimento em tempo real
 - ✅ Sugestões inteligentes de respostas
@@ -39,6 +40,7 @@
 - ✅ Roteamento inteligente
 
 ### 💬 WhatsApp
+
 - ✅ Conexão via Evolution API
 - ✅ Conexão via Meta Business API (OAuth)
 - ✅ Múltiplas conexões simultâneas
@@ -47,6 +49,7 @@
 - ✅ Status de leitura e entrega
 
 ### 📊 Gestão e Analytics
+
 - ✅ Dashboard com métricas em tempo real
 - ✅ Gestão completa de leads
 - ✅ Score e temperatura de leads
@@ -55,18 +58,21 @@
 - ✅ Rastreamento de origem (pixels)
 
 ### 👥 Equipe e Workspace
+
 - ✅ Sistema multi-tenant (workspaces)
 - ✅ Gestão de membros e permissões
 - ✅ Roles (owner, admin, member, seller)
 - ✅ Dashboard individual por vendedor
 
 ### 🔄 Automações
+
 - ✅ Respostas automáticas
 - ✅ Qualificação automática
 - ✅ Alertas configuráveis
 - ✅ Templates de mensagens
 
 ### 💳 Assinatura
+
 - ✅ Planos de assinatura (Stripe)
 - ✅ Controle de acesso por plano
 - ✅ Portal do cliente
@@ -74,6 +80,7 @@
 ## 🛠️ Tecnologias
 
 ### Frontend
+
 - **React 18.3.1** - Biblioteca UI
 - **TypeScript 5.8.3** - Tipagem estática
 - **Vite 5.4.19** - Build tool
@@ -84,11 +91,13 @@
 - **i18next** - Internacionalização (pt-BR, en, es)
 
 ### Backend
+
 - **Supabase** - BaaS (PostgreSQL + Edge Functions)
 - **Deno** - Runtime para Edge Functions
 - **Stripe** - Pagamentos
 
 ### Integrações
+
 - **Lovable AI Gateway** - IA para análise e chat
 - **Evolution API** - Integração WhatsApp
 - **Meta Business API** - Integração WhatsApp oficial
@@ -105,17 +114,20 @@
 ### Passos
 
 1. **Clone o repositório**
+
 ```bash
 git clone https://github.com/andredrezin/synapsewhats_Cursor.git
 cd synapsewhats_Cursor
 ```
 
 2. **Instale as dependências**
+
 ```bash
 npm install
 ```
 
 3. **Configure as variáveis de ambiente**
+
 ```bash
 # Veja ENV_EXAMPLE.md para detalhes
 cp ENV_EXAMPLE.md .env
@@ -123,11 +135,13 @@ cp ENV_EXAMPLE.md .env
 ```
 
 4. **Inicie o servidor de desenvolvimento**
+
 ```bash
 npm run dev
 ```
 
 5. **Acesse a aplicação**
+
 ```
 http://localhost:8080
 ```
@@ -148,6 +162,7 @@ Veja o arquivo [ENV_EXAMPLE.md](./ENV_EXAMPLE.md) para a lista completa de vari�
 ### WhatsApp
 
 Configure uma das opções:
+
 - **Evolution API**: Configure `EVOLUTION_API_URL` e `EVOLUTION_API_KEY`
 - **Meta Business API**: Configure `META_APP_ID` e `META_APP_SECRET`
 

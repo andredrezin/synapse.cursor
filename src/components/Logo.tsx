@@ -1,0 +1,162 @@
+import React from "react";
+
+interface LogoProps {
+  className?: string;
+  showText?: boolean;
+  iconColor?: string;
+  textColor?: string;
+}
+
+export const Logo: React.FC<LogoProps> = ({
+  className = "h-8",
+  showText = true,
+  iconColor = "#22c55e", // text-green-500
+  textColor = "currentColor",
+}) => {
+  return (
+    <div className={`flex items-center gap-2 ${className}`}>
+      {/* Ícone Cérebro + Circuito */}
+      <svg
+        viewBox="0 0 64 64"
+        className="h-full w-auto"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <defs>
+          <linearGradient id="logo_grad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#4ade80" />
+            <stop offset="100%" stopColor="#22c55e" />
+          </linearGradient>
+        </defs>
+        {/* Lado Esquerdo - Cérebro Orgânico */}
+        <path
+          d="M28 12 C20 12, 10 18, 10 28 C10 32, 12 35, 13 37 C11 39, 10 42, 11 45 C12 50, 16 54, 22 54 C24 54, 26 53, 28 51 L28 46"
+          stroke="url(#logo_grad)"
+          strokeWidth="3"
+          strokeLinecap="round"
+        />
+        <path
+          d="M15 26 C18 24, 22 26, 24 28"
+          stroke="url(#logo_grad)"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+        />
+        <path
+          d="M13 33 C16 31, 20 33, 23 35"
+          stroke="url(#logo_grad)"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+        />
+        <path
+          d="M14 41 C17 39, 21 40, 24 42"
+          stroke="url(#logo_grad)"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+        />
+
+        {/* Chip Central */}
+        <rect
+          x="28"
+          y="26"
+          width="10"
+          height="10"
+          rx="2"
+          stroke="url(#logo_grad)"
+          strokeWidth="3"
+        />
+        <rect
+          x="31"
+          y="29"
+          width="4"
+          height="4"
+          rx="1"
+          fill="url(#logo_grad)"
+        />
+
+        {/* Lado Direito - Circuitos */}
+        <line
+          x1="38"
+          y1="28"
+          x2="46"
+          y2="20"
+          stroke="url(#logo_grad)"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+        />
+        <circle cx="46" cy="20" r="2.5" fill="url(#logo_grad)" />
+        <line
+          x1="38"
+          y1="31"
+          x2="50"
+          y2="31"
+          stroke="url(#logo_grad)"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+        />
+        <circle cx="50" cy="31" r="2.5" fill="url(#logo_grad)" />
+        <line
+          x1="38"
+          y1="34"
+          x2="46"
+          y2="42"
+          stroke="url(#logo_grad)"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+        />
+        <circle cx="46" cy="42" r="2.5" fill="url(#logo_grad)" />
+
+        {/* Circuitos Topo/Baixo */}
+        <line
+          x1="33"
+          y1="26"
+          x2="33"
+          y2="16"
+          stroke="url(#logo_grad)"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+        />
+        <circle cx="33" cy="14" r="2.5" fill="url(#logo_grad)" />
+        <line
+          x1="36"
+          y1="26"
+          x2="42"
+          y2="14"
+          stroke="url(#logo_grad)"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+        />
+        <circle cx="42" cy="13" r="2.5" fill="url(#logo_grad)" />
+        <line
+          x1="33"
+          y1="36"
+          x2="33"
+          y2="48"
+          stroke="url(#logo_grad)"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+        />
+        <circle cx="33" cy="50" r="2.5" fill="url(#logo_grad)" />
+        <line
+          x1="36"
+          y1="36"
+          x2="44"
+          y2="50"
+          stroke="url(#logo_grad)"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+        />
+        <circle cx="44" cy="51" r="2.5" fill="url(#logo_grad)" />
+      </svg>
+
+      {/* Texto Synapse */}
+      {showText && (
+        <span
+          className="font-bold tracking-tight"
+          style={{ color: textColor, fontSize: "1.5em" }}
+        >
+          Synapse
+        </span>
+      )}
+    </div>
+  );
+};

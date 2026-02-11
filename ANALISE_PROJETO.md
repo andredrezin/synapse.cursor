@@ -1,8 +1,8 @@
-# 📊 Análise Completa do Projeto SynapseWhats
+# 📊 Análise Completa do Projeto Synapse
 
 ## 🎯 Visão Geral
 
-**Nome do Projeto**: SynapseWhats / WhatsMetrics / LeadFlux  
+**Nome do Projeto**: Synapse / WhatsMetrics / LeadFlux  
 **Tipo**: CRM Inteligente para WhatsApp com IA  
 **Stack Principal**: React + TypeScript + Vite + Supabase + Tailwind CSS
 
@@ -13,6 +13,7 @@ Este é um sistema completo de gestão de leads e conversas via WhatsApp, com in
 ## 🏗️ Arquitetura do Projeto
 
 ### Frontend
+
 - **Framework**: React 18.3.1 com TypeScript
 - **Build Tool**: Vite 5.4.19
 - **Roteamento**: React Router DOM 6.30.1
@@ -23,12 +24,14 @@ Este é um sistema completo de gestão de leads e conversas via WhatsApp, com in
 - **Formulários**: React Hook Form + Zod
 
 ### Backend
+
 - **BaaS**: Supabase (PostgreSQL + Edge Functions)
 - **Autenticação**: Supabase Auth
 - **Edge Functions**: Deno (TypeScript)
 - **Pagamentos**: Stripe (integração via webhooks)
 
 ### Integrações Externas
+
 - **WhatsApp**: Evolution API + Meta Business API
 - **IA**: Lovable AI Gateway (para análise e chat)
 - **Email**: Sistema de envio via Supabase Functions
@@ -67,6 +70,7 @@ synapsewhats1-main/
 ## 🚀 Funcionalidades Principais
 
 ### 1. **Autenticação e Workspace**
+
 - ✅ Login/Registro com Supabase Auth
 - ✅ Sistema de workspaces (multi-tenant)
 - ✅ Perfis de usuário com roles (owner, admin, member, seller)
@@ -74,6 +78,7 @@ synapsewhats1-main/
 - ✅ Recuperação de senha
 
 ### 2. **Conexões WhatsApp**
+
 - ✅ Suporte para Evolution API
 - ✅ Suporte para Meta Business API (OAuth)
 - ✅ Conexão via QR Code
@@ -82,6 +87,7 @@ synapsewhats1-main/
 - ✅ Atribuição de vendedores por conexão
 
 ### 3. **Gestão de Conversas**
+
 - ✅ Lista de conversas em tempo real
 - ✅ Chat room individual
 - ✅ Envio de mensagens via WhatsApp
@@ -90,6 +96,7 @@ synapsewhats1-main/
 - ✅ Análise de sentimento (IA)
 
 ### 4. **Gestão de Leads**
+
 - ✅ Lista de leads com filtros
 - ✅ Qualificação automática por IA
 - ✅ Score de leads (0-100)
@@ -100,6 +107,7 @@ synapsewhats1-main/
 ### 5. **Inteligência Artificial**
 
 #### 5.1 Chat IA (ai-chat)
+
 - Respostas automáticas para leads
 - Personalidade customizável
 - Prompt de sistema configurável
@@ -108,6 +116,7 @@ synapsewhats1-main/
 - Palavras-chave para transferência humana
 
 #### 5.2 Análise de Sentimento (ai-analyze)
+
 - Análise automática de conversas
 - Detecção de sentimento (positivo/neutro/negativo)
 - Identificação de intenção do cliente
@@ -115,11 +124,13 @@ synapsewhats1-main/
 - Pontos-chave identificados
 
 #### 5.3 Sugestões Inteligentes (ai-suggest)
+
 - Sugestões de respostas para vendedores
 - Tipos: amigável, profissional, fechamento
 - Nível de confiança das sugestões
 
 #### 5.4 Qualificação de Leads (ai-qualify)
+
 - Pontuação automática (0-100)
 - Classificação de temperatura
 - Probabilidade de conversão
@@ -127,17 +138,20 @@ synapsewhats1-main/
 - Alertas para leads quentes
 
 #### 5.5 Base de Conhecimento (ai-learn)
+
 - Upload de documentos
 - Treinamento da IA com informações do negócio
 - FAQ e respostas padrão
 - Análise de conteúdo
 
 #### 5.6 Roteador IA (ai-router)
+
 - Direcionamento inteligente de tarefas
 - Verificação de disponibilidade
 - Gerenciamento de horários
 
 ### 6. **Dashboard e Analytics**
+
 - ✅ Métricas em tempo real
 - ✅ Taxa de conversão
 - ✅ Leads ativos
@@ -149,34 +163,40 @@ synapsewhats1-main/
 - ✅ Insights de IA
 
 ### 7. **Equipe e Permissões**
+
 - ✅ Gestão de membros da equipe
 - ✅ Roles e permissões
 - ✅ Dashboard individual para vendedores
 - ✅ Performance por vendedor
 
 ### 8. **Automações**
+
 - ✅ Respostas automáticas
 - ✅ Qualificação automática
 - ✅ Alertas configuráveis
 - ✅ Regras de negócio customizáveis
 
 ### 9. **Templates e Mensagens**
+
 - ✅ Templates de mensagens
 - ✅ Respostas rápidas
 - ✅ Personalização de mensagens
 
 ### 10. **Pixel de Rastreamento**
+
 - ✅ Geração de pixels de conversão
 - ✅ Rastreamento de origem de leads
 - ✅ Analytics de fontes
 
 ### 11. **Relatórios**
+
 - ✅ Relatórios personalizados
 - ✅ Exportação de dados
 - ✅ Analytics de churn
 - ✅ Analytics de IA
 
 ### 12. **Assinatura e Pagamentos**
+
 - ✅ Planos de assinatura (Stripe)
 - ✅ Controle de acesso por plano
 - ✅ Portal do cliente
@@ -188,6 +208,7 @@ synapsewhats1-main/
 ## 🔧 Tecnologias e Bibliotecas Principais
 
 ### Frontend
+
 ```json
 {
   "react": "^18.3.1",
@@ -206,11 +227,13 @@ synapsewhats1-main/
 ```
 
 ### UI Components (shadcn/ui)
+
 - Radix UI primitives (acessibilidade)
 - Tailwind CSS para estilização
 - Componentes totalmente customizáveis
 
 ### Backend (Supabase Edge Functions)
+
 - Deno runtime
 - TypeScript
 - Integração com Lovable AI Gateway
@@ -221,6 +244,7 @@ synapsewhats1-main/
 ## 📊 Banco de Dados (Supabase)
 
 ### Tabelas Principais (inferidas das migrations)
+
 - `profiles` - Perfis de usuários
 - `workspaces` - Workspaces multi-tenant
 - `workspace_members` - Membros e roles
@@ -240,6 +264,7 @@ synapsewhats1-main/
 ## 🌐 Rotas da Aplicação
 
 ### Rotas Públicas
+
 - `/` - Landing page
 - `/auth` - Login/Registro
 - `/auth/callback` - Callback OAuth
@@ -247,6 +272,7 @@ synapsewhats1-main/
 - `/reset-password` - Redefinir senha
 
 ### Rotas Protegidas (Dashboard)
+
 - `/dashboard` - Dashboard principal
 - `/dashboard/seller` - Dashboard do vendedor
 - `/dashboard/profile` - Perfil do usuário
@@ -274,6 +300,7 @@ synapsewhats1-main/
 ## 🤖 Edge Functions (Supabase)
 
 ### Funções de IA
+
 1. **ai-chat** - Chat automático com leads
 2. **ai-analyze** - Análise de sentimento
 3. **ai-suggest** - Sugestões de respostas
@@ -283,6 +310,7 @@ synapsewhats1-main/
 7. **ai-guide** - Guia IA interativo
 
 ### Funções WhatsApp
+
 1. **whatsapp-connect** - Conectar WhatsApp
 2. **whatsapp-send** - Enviar mensagens
 3. **whatsapp-webhook** - Receber webhooks
@@ -291,6 +319,7 @@ synapsewhats1-main/
 6. **whatsapp-health-check** - Health check
 
 ### Funções de Sistema
+
 1. **create-workspace** - Criar workspace
 2. **check-subscription** - Verificar assinatura
 3. **create-checkout** - Criar checkout Stripe
@@ -300,6 +329,7 @@ synapsewhats1-main/
 7. **apply-retention-coupon** - Cupom de retenção
 
 ### Funções Utilitárias
+
 1. **analyze-image** - Análise de imagens
 2. **transcribe-audio** - Transcrição de áudio
 
@@ -308,12 +338,14 @@ synapsewhats1-main/
 ## 🎨 Design System
 
 ### Cores (Tailwind CSS)
+
 - Sistema de cores baseado em HSL
 - Suporte a tema claro/escuro
 - Cores de gráficos (green, blue, orange, red, purple)
 - Cores de sidebar customizadas
 
 ### Componentes UI
+
 - Sistema completo de componentes shadcn/ui
 - 49+ componentes disponíveis
 - Totalmente acessíveis (Radix UI)
@@ -369,6 +401,7 @@ synapsewhats1-main/
 ## 📈 Métricas e Analytics
 
 ### Métricas Principais
+
 - Taxa de conversão
 - Leads ativos
 - Conversas do dia
@@ -377,6 +410,7 @@ synapsewhats1-main/
 - Performance da equipe
 
 ### Analytics Avançados
+
 - Analytics de IA (uso, performance)
 - Analytics de churn
 - Comparação de períodos
@@ -388,11 +422,13 @@ synapsewhats1-main/
 ## 💳 Sistema de Assinatura
 
 ### Planos (inferidos)
+
 - Free/Basic
 - Pro
 - Enterprise
 
 ### Controle de Acesso
+
 - Features bloqueadas por plano
 - Upgrade banners
 - Portal do cliente Stripe
@@ -403,6 +439,7 @@ synapsewhats1-main/
 ## 🔄 Fluxos Principais
 
 ### 1. Onboarding
+
 1. Registro/Login
 2. Criação de workspace
 3. Configuração inicial
@@ -411,6 +448,7 @@ synapsewhats1-main/
 6. Primeira conversa
 
 ### 2. Conversa com Lead
+
 1. Lead entra em contato via WhatsApp
 2. IA analisa e responde (se configurado)
 3. Vendedor recebe notificação
@@ -421,6 +459,7 @@ synapsewhats1-main/
 8. Alertas são gerados se necessário
 
 ### 3. Gestão de Lead
+
 1. Lead é criado automaticamente
 2. IA qualifica o lead
 3. Lead recebe score e temperatura
@@ -433,6 +472,7 @@ synapsewhats1-main/
 ## 🚦 Estado Atual do Projeto
 
 ### ✅ Implementado
+
 - Sistema completo de autenticação
 - Gestão de workspaces
 - Conexões WhatsApp (Evolution + Meta)
@@ -448,6 +488,7 @@ synapsewhats1-main/
 - Onboarding
 
 ### 🔄 Possíveis Melhorias
+
 - Testes automatizados
 - Documentação de API
 - Performance optimization
@@ -494,6 +535,7 @@ STRIPE_SECRET_KEY=... (para pagamentos)
 Este é um projeto **muito completo e bem estruturado** de CRM para WhatsApp com IA integrada. A arquitetura é moderna, escalável e segue boas práticas de desenvolvimento. O sistema oferece funcionalidades avançadas de automação, análise e gestão de leads, tornando-o uma solução robusta para empresas que querem otimizar suas vendas via WhatsApp.
 
 **Pontos Fortes:**
+
 - ✅ Arquitetura bem organizada
 - ✅ Código TypeScript tipado
 - ✅ UI moderna e responsiva
@@ -503,6 +545,7 @@ Este é um projeto **muito completo e bem estruturado** de CRM para WhatsApp com
 - ✅ Sistema de assinatura integrado
 
 **Tecnologias Modernas:**
+
 - React 18 com hooks
 - Vite para build rápido
 - Supabase para backend
@@ -510,6 +553,3 @@ Este é um projeto **muito completo e bem estruturado** de CRM para WhatsApp com
 - shadcn/ui para componentes
 
 Este projeto está pronto para produção e pode ser facilmente expandido com novas funcionalidades.
-
-
-

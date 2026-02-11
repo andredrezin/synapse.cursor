@@ -1,7 +1,6 @@
 // Force Vercel Update - Menu Cleanup
 import {
   LayoutDashboard,
-  MessageCircle,
   Users,
   BarChart3,
   Settings,
@@ -24,6 +23,8 @@ import {
   Brain,
   Shuffle,
   Trophy,
+  Image,
+  MessageCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLocation, Link, useNavigate } from "react-router-dom";
@@ -40,10 +41,12 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useTranslation } from "react-i18next";
+import { Logo } from "@/components/Logo";
 
 interface DashboardSidebarProps {
   isOpen: boolean;
   onToggle: () => void;
+  isMobile?: boolean; // New prop for mobile context
 }
 
 type PremiumRequirement = "professional" | "premium";
@@ -121,6 +124,12 @@ const getAdminMenuSections = (t: any): MenuSection[] => [
         href: "/dashboard/knowledge",
         adminOnly: true,
         requiredPlan: "professional",
+      },
+      {
+        icon: Image,
+        labelKey: "nav.catalog",
+        href: "/dashboard/catalog",
+        adminOnly: true,
       },
       { icon: Target, labelKey: "nav.leadScoring", href: "/dashboard/scoring" },
     ],
@@ -266,13 +275,24 @@ const memberMenuItems: MenuItem[] = [
   { icon: Bell, labelKey: "nav.alerts", href: "/dashboard/alerts" },
 ];
 
-const DashboardSidebar = ({ isOpen, onToggle }: DashboardSidebarProps) => {
+const DashboardSidebar = ({
+  isOpen,
+  onToggle,
+  isMobile,
+}: DashboardSidebarProps) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { signOut } = useAuth();
   const { isAdmin, isSeller, currentRole } = usePermissions();
   const { plan } = useSubscriptionContext();
   const { t } = useTranslation();
+
+  // Helper to handle link clicks
+  const handleLinkClick = () => {
+    if (isMobile) {
+      onToggle(); // Close sidebar (sheet) on mobile when a link is clicked
+    }
+  };
 
   // Select menu items based on role
   const getMenuContent = () => {
@@ -299,31 +319,40 @@ const DashboardSidebar = ({ isOpen, onToggle }: DashboardSidebarProps) => {
     >
       {/* Logo */}
       <div className="h-16 flex items-center justify-between px-4 border-b border-sidebar-border">
-        <Link to="/" className="flex items-center gap-2">
-          <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
-            <MessageCircle className="w-5 h-5 text-primary-foreground" />
-          </div>
-          {isOpen && (
-            <span className="text-lg font-bold text-sidebar-foreground">
-              WhatsMetrics
-            </span>
-          )}
-        </Link>
-        <button
-          onClick={onToggle}
-          className="p-1.5 rounded-lg hover:bg-sidebar-accent transition-colors"
+        <Link
+          to="/"
+          className="flex items-center gap-2"
+          onClick={handleLinkClick}
         >
-          <ChevronLeft
-            className={cn(
-              "w-4 h-4 text-sidebar-foreground transition-transform",
-              !isOpen && "rotate-180",
-            )}
-          />
-        </button>
+          <div className="flex items-center gap-2">
+            <div
+              className={`transition-all duration-300 ${!isOpen && !isMobile ? "w-full flex justify-center" : ""}`}
+            >
+              {isOpen || isMobile ? (
+                <Logo className="h-8" />
+              ) : (
+                <Logo className="h-8" showText={false} />
+              )}
+            </div>
+          </div>
+        </Link>
+        {!isMobile && (
+          <button
+            onClick={onToggle}
+            className="p-1.5 rounded-lg hover:bg-sidebar-accent transition-colors"
+          >
+            <ChevronLeft
+              className={cn(
+                "w-4 h-4 text-sidebar-foreground transition-transform",
+                !isOpen && "rotate-180",
+              )}
+            />
+          </button>
+        )}
       </div>
 
       {/* Role Badge */}
-      {isOpen && (
+      {(isOpen || isMobile) && (
         <div className="px-4 py-3 border-b border-sidebar-border">
           <Badge
             variant={isAdmin ? "default" : "secondary"}
@@ -338,12 +367,12 @@ const DashboardSidebar = ({ isOpen, onToggle }: DashboardSidebarProps) => {
       <nav className="flex-1 py-4 px-3 space-y-4 overflow-y-auto custom-scrollbar">
         {sections.map((section, idx) => (
           <div key={idx} className="space-y-1">
-            {isOpen && section.title && (
+            {(isOpen || isMobile) && section.title && (
               <h3 className="px-3 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60 mb-2 mt-4 first:mt-0">
                 {section.title}
               </h3>
             )}
-            {!isOpen && idx > 0 && (
+            {!isOpen && !isMobile && idx > 0 && (
               <div className="h-px bg-sidebar-border/50 mx-2 my-4" />
             )}
 
@@ -354,13 +383,14 @@ const DashboardSidebar = ({ isOpen, onToggle }: DashboardSidebarProps) => {
 
               const isActive = location.pathname === item.href;
               const premiumBadge = item.requiredPlan
-                ? getPlanBadge(item.requiredPlan, plan, isOpen)
+                ? getPlanBadge(item.requiredPlan, plan, isOpen || !!isMobile)
                 : null;
 
               return (
                 <Link
                   key={item.href}
                   to={item.href}
+                  onClick={handleLinkClick}
                   className={cn(
                     "flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 relative group",
                     isActive
@@ -377,9 +407,9 @@ const DashboardSidebar = ({ isOpen, onToggle }: DashboardSidebarProps) => {
                           : "text-muted-foreground group-hover:text-primary transition-colors",
                       )}
                     />
-                    {!isOpen && premiumBadge}
+                    {!isOpen && !isMobile && premiumBadge}
                   </div>
-                  {isOpen && (
+                  {(isOpen || isMobile) && (
                     <>
                       <span className="text-sm font-medium whitespace-nowrap overflow-hidden text-ellipsis">
                         {t(item.labelKey)}
@@ -398,6 +428,7 @@ const DashboardSidebar = ({ isOpen, onToggle }: DashboardSidebarProps) => {
       <div className="p-3 border-t border-sidebar-border space-y-1">
         <Link
           to="/dashboard/profile"
+          onClick={handleLinkClick}
           className={cn(
             "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent transition-colors",
             location.pathname === "/dashboard/profile" &&
@@ -405,7 +436,7 @@ const DashboardSidebar = ({ isOpen, onToggle }: DashboardSidebarProps) => {
           )}
         >
           <UserCircle className="w-5 h-5 flex-shrink-0" />
-          {isOpen && (
+          {(isOpen || isMobile) && (
             <span className="text-sm font-medium">{t("auth.profile")}</span>
           )}
         </Link>
@@ -413,6 +444,7 @@ const DashboardSidebar = ({ isOpen, onToggle }: DashboardSidebarProps) => {
         {isAdmin && (
           <Link
             to="/dashboard/settings"
+            onClick={handleLinkClick}
             className={cn(
               "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent transition-colors",
               location.pathname === "/dashboard/settings" &&
@@ -420,7 +452,7 @@ const DashboardSidebar = ({ isOpen, onToggle }: DashboardSidebarProps) => {
             )}
           >
             <Settings className="w-5 h-5 flex-shrink-0" />
-            {isOpen && (
+            {(isOpen || isMobile) && (
               <span className="text-sm font-medium">{t("auth.settings")}</span>
             )}
           </Link>
@@ -431,7 +463,7 @@ const DashboardSidebar = ({ isOpen, onToggle }: DashboardSidebarProps) => {
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
         >
           <LogOut className="w-5 h-5 flex-shrink-0" />
-          {isOpen && (
+          {(isOpen || isMobile) && (
             <span className="text-sm font-medium">{t("auth.logout")}</span>
           )}
         </button>

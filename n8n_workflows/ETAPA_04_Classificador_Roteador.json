@@ -1,0 +1,376 @@
+{
+  "name": "ETAPA_04_Classificador_Roteador",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "ETAPA_04_Classificador_Roteador",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 250],
+      "id": "webhook_etapa04",
+      "name": "Webhook - Recebe ETAPA_03",
+      "webhookId": "etapa04-classificador"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "workspace_id",
+              "name": "workspace_id",
+              "value": "={{ $json.body.body.workspace_id }}",
+              "type": "string"
+            },
+            {
+              "id": "lead_id",
+              "name": "lead_id",
+              "value": "={{ $json.body.body.lead_id }}",
+              "type": "string"
+            },
+            {
+              "id": "telefone",
+              "name": "telefone",
+              "value": "={{ $json.body.body.telefone }}",
+              "type": "string"
+            },
+            {
+              "id": "mensagem",
+              "name": "mensagem",
+              "value": "={{ $json.body.body.mensagem }}",
+              "type": "string"
+            },
+            {
+              "id": "conversation_id",
+              "name": "conversation_id",
+              "value": "={{ $json.body.body.conversation_id }}",
+              "type": "string"
+            },
+            {
+              "id": "sentimento_etapa03",
+              "name": "sentimento_etapa03",
+              "value": "={{ $json.body.body.sentimento || 'Neutro' }}",
+              "type": "string"
+            },
+            {
+              "id": "classificacao_etapa03",
+              "name": "classificacao_etapa03",
+              "value": "={{ $json.body.body.classificacao || 'Morno' }}",
+              "type": "string"
+            },
+            {
+              "id": "server_url",
+              "name": "server_url",
+              "value": "={{ $json.body.body.server_url }}",
+              "type": "string"
+            },
+            {
+              "id": "apikey",
+              "name": "apikey",
+              "value": "={{ $json.body.body.apikey }}",
+              "type": "string"
+            },
+            {
+              "id": "instancia",
+              "name": "instancia",
+              "value": "={{ $json.body.body.instancia }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [250, 250],
+      "id": "extrair_dados_webhook",
+      "name": "Extrair Dados do Webhook"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/embeddings",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"input\": \"{{ $json.mensagem }}\", \"model\": \"text-embedding-3-small\"}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [500, 250],
+      "id": "gerar_embedding_mensagem",
+      "name": "Gerar Embedding da Mensagem",
+      "credentials": {
+        "openAiApi": {
+          "id": "kUgyGIADzm22E5Ls",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Prepara o embedding para busca vetorial\nconst embedding = $input.first().json.data?.[0]?.embedding || [];\nconst dadosWebhook = $('Extrair Dados do Webhook').first().json;\n\nreturn [{\n  json: {\n    embedding: embedding,\n    workspace_id: dadosWebhook.workspace_id,\n    lead_id: dadosWebhook.lead_id,\n    mensagem: dadosWebhook.mensagem\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [700, 250],
+      "id": "preparar_embedding",
+      "name": "Preparar Embedding"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id, title, content, category, 1 - (embedding <=> $1::vector) as similarity FROM knowledge_base WHERE workspace_id = $2 AND 1 - (embedding <=> $1::vector) > 0.5 ORDER BY similarity DESC LIMIT 5;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.3,
+      "position": [950, 250],
+      "id": "buscar_rag_contexto",
+      "name": "Buscar RAG - Contexto Relevante",
+      "credentials": {
+        "postgres": {
+          "id": "oXY1gb5teeQPH7Z8",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Formata o contexto RAG recuperado\nconst ragResults = $input.all();\n\nif (!ragResults || ragResults.length === 0 || !ragResults[0].json.id) {\n  return [{\n    json: {\n      contexto_rag: \"[Nenhum contexto relevante encontrado no RAG]\",\n      num_documentos_encontrados: 0\n    }\n  }];\n}\n\nconst contextoFormatado = ragResults\n  .map((item, idx) => {\n    const data = item.json;\n    return `[${idx + 1}] ${data.title || 'Sem titulo'}\\nCategoria: ${data.category || 'geral'}\\nConteudo: ${data.content || ''}\\nRelevancia: ${((data.similarity || 0) * 100).toFixed(1)}%`;\n  })\n  .join('\\n\\n---\\n\\n');\n\nreturn [{\n  json: {\n    contexto_rag: contextoFormatado,\n    num_documentos_encontrados: ragResults.length\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1200, 250],
+      "id": "formatar_contexto_rag",
+      "name": "Formatar Contexto RAG"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Extrair Dados do Webhook').item.json.conversation_id }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [1450, 450],
+      "id": "postgres_memory_historico",
+      "name": "Postgres Memory Historico",
+      "credentials": {
+        "postgres": {
+          "id": "oXY1gb5teeQPH7Z8",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [1450, 550],
+      "id": "gemini_model",
+      "name": "Google Gemini Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "RwYV7rx4LxAxqh8Y",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Voce e um Analista Neural de Vendas SYNAPSE.\n\nDADOS DO LEAD:\n- Mensagem atual: {{ $('Extrair Dados do Webhook').item.json.mensagem }}\n- Sentimento ETAPA_03: {{ $('Extrair Dados do Webhook').item.json.sentimento_etapa03 }}\n- Classificacao previa: {{ $('Extrair Dados do Webhook').item.json.classificacao_etapa03 }}\n\nCONTEXTO RAG:\n{{ $('Formatar Contexto RAG').item.json.contexto_rag }}\n\nSUA TAREFA:\nAnalise TODOS os dados e o historico da conversa. Retorne APENAS um JSON valido:\n\n{\"temperatura_final\": \"vinculo|frio|morno|quente\", \"confianca\": 0.95, \"justificativa\": \"Explicacao curta\", \"intencao_detectada\": \"comprar|pesquisar|comparar|reclamar|conversar|conhecer\"}\n\nCRITERIOS:\n- vinculo: Primeira interacao, saudacao\n- frio: Sem interesse, objecoes\n- morno: Duvidas, comparando\n- quente: Preço, como comprar, urgencia\n\nRESPONDA APENAS O JSON.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.6,
+      "position": [1450, 250],
+      "id": "agente_classificador",
+      "name": "Agente Classificador Neural"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse seguro do JSON retornado pelo Agent\nconst agentOutput = $input.first().json.output || '';\n\nlet classificacao = {\n  temperatura_final: 'morno',\n  confianca: 0.5,\n  justificativa: 'Classificacao padrao',\n  intencao_detectada: 'conversar'\n};\n\ntry {\n  const match = agentOutput.match(/\\{[\\s\\S]*\\}/);\n  if (match) {\n    classificacao = JSON.parse(match[0]);\n  }\n} catch (e) {\n  console.error('Erro:', e.message);\n}\n\nclassificacao.temperatura_final = (classificacao.temperatura_final || 'morno').toLowerCase();\n\nconst temperaturasValidas = ['vinculo', 'frio', 'morno', 'quente'];\nif (!temperaturasValidas.includes(classificacao.temperatura_final)) {\n  classificacao.temperatura_final = 'morno';\n}\n\nconst dadosWebhook = $('Extrair Dados do Webhook').first().json;\nconst contextoRAG = $('Formatar Contexto RAG').first().json;\n\nreturn [{\n  json: {\n    workspace_id: dadosWebhook.workspace_id,\n    lead_id: dadosWebhook.lead_id,\n    telefone: dadosWebhook.telefone,\n    mensagem: dadosWebhook.mensagem,\n    conversation_id: dadosWebhook.conversation_id,\n    server_url: dadosWebhook.server_url,\n    apikey: dadosWebhook.apikey,\n    instancia: dadosWebhook.instancia,\n    temperatura: classificacao.temperatura_final,\n    confianca: classificacao.confianca,\n    justificativa: classificacao.justificativa,\n    intencao: classificacao.intencao_detectada,\n    contexto_rag: contextoRAG.contexto_rag,\n    num_docs_rag: contextoRAG.num_documentos_encontrados || 0,\n    processado_em: new Date().toISOString(),\n    etapa: 'ETAPA_04'\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1700, 250],
+      "id": "preparar_payload_etapa05",
+      "name": "Preparar Payload ETAPA05"
+    },
+    {
+      "parameters": {
+        "dataType": "string",
+        "value1": "={{ $json.temperatura }}",
+        "rules": {
+          "rules": [
+            {
+              "value2": "vinculo",
+              "output": 0
+            },
+            {
+              "value2": "frio",
+              "output": 1
+            },
+            {
+              "value2": "morno",
+              "output": 2
+            },
+            {
+              "value2": "quente",
+              "output": 3
+            }
+          ]
+        },
+        "fallbackOutput": 2
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 2,
+      "position": [1950, 250],
+      "id": "switch_temperatura",
+      "name": "Switch - Roteador Neural"
+    },
+    {
+      "parameters": {
+        "url": "https://n8n.synapseautomacao.com.br/webhook/ETAPA_05_Agente_Vinculo",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2200, 50],
+      "id": "chamar_agente_vinculo",
+      "name": "Agente VINCULO"
+    },
+    {
+      "parameters": {
+        "url": "https://n8n.synapseautomacao.com.br/webhook/ETAPA_05_Agente_Frio",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2200, 200],
+      "id": "chamar_agente_frio",
+      "name": "Agente FRIO"
+    },
+    {
+      "parameters": {
+        "url": "https://n8n.synapseautomacao.com.br/webhook/ETAPA_05_Agente_Morno",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2200, 350],
+      "id": "chamar_agente_morno",
+      "name": "Agente MORNO"
+    },
+    {
+      "parameters": {
+        "url": "https://n8n.synapseautomacao.com.br/webhook/ETAPA_05_Agente_Quente",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2200, 500],
+      "id": "chamar_agente_quente",
+      "name": "Agente QUENTE"
+    }
+  ],
+  "connections": {
+    "Webhook - Recebe ETAPA_03": {
+      "main": [
+        [{ "node": "Extrair Dados do Webhook", "type": "main", "index": 0 }]
+      ]
+    },
+    "Extrair Dados do Webhook": {
+      "main": [
+        [{ "node": "Gerar Embedding da Mensagem", "type": "main", "index": 0 }]
+      ]
+    },
+    "Gerar Embedding da Mensagem": {
+      "main": [[{ "node": "Preparar Embedding", "type": "main", "index": 0 }]]
+    },
+    "Preparar Embedding": {
+      "main": [
+        [
+          {
+            "node": "Buscar RAG - Contexto Relevante",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar RAG - Contexto Relevante": {
+      "main": [
+        [{ "node": "Formatar Contexto RAG", "type": "main", "index": 0 }]
+      ]
+    },
+    "Formatar Contexto RAG": {
+      "main": [
+        [{ "node": "Agente Classificador Neural", "type": "main", "index": 0 }]
+      ]
+    },
+    "Postgres Memory Historico": {
+      "ai_memory": [
+        [
+          {
+            "node": "Agente Classificador Neural",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Agente Classificador Neural",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agente Classificador Neural": {
+      "main": [
+        [{ "node": "Preparar Payload ETAPA05", "type": "main", "index": 0 }]
+      ]
+    },
+    "Preparar Payload ETAPA05": {
+      "main": [
+        [{ "node": "Switch - Roteador Neural", "type": "main", "index": 0 }]
+      ]
+    },
+    "Switch - Roteador Neural": {
+      "main": [
+        [{ "node": "Agente VINCULO", "type": "main", "index": 0 }],
+        [{ "node": "Agente FRIO", "type": "main", "index": 0 }],
+        [{ "node": "Agente MORNO", "type": "main", "index": 0 }],
+        [{ "node": "Agente QUENTE", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "68f027398f9e5e58fc709533816859718778176c42991d45f89e26a1e44ad6b9"
+  }
+}

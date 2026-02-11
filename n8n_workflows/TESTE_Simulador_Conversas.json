@@ -1,0 +1,323 @@
+{
+  "name": "TESTE - Simulador de Conversas WhatsApp",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "seconds",
+              "secondsInterval": 30
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [-300, 0],
+      "id": "trigger-schedule",
+      "name": "Trigger Automático (30s)",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "path": "teste-conversa",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [-300, 200],
+      "id": "trigger-manual",
+      "name": "Trigger Manual",
+      "webhookId": "teste-conversa-webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ==========================================\n// CONFIGURAÇÕES DO TESTE\n// ==========================================\n\nconst CONFIG = {\n  // Dados do Workspace de Teste\n  workspace_id: '4f2e7764-d713-4a19-a7ef-b6bda4f960dd',\n  \n  // Dados da Evolution API\n  server_url: 'https://evo-gwo8ss8wk48w8gg4kw8ggows.coolify.synapseautomacao.com.br',\n  apikey: '1F681DF7-90EE-43C1-B122-A4277BDFB642',\n  instancia: 'ws_4f2e7764_1766891265259',\n  \n  // Telefone de Teste (seu número)\n  telefone_teste: '5535999999999', // ALTERE PARA SEU NÚMERO\n  \n  // URL do Webhook Principal (ETAPA_01)\n  webhook_principal: 'https://n8n.synapseautomacao.com.br/webhook/ETAPA_01'\n};\n\n// ==========================================\n// CENÁRIOS DE TESTE\n// ==========================================\n\nconst CENARIOS = [\n  // === LEAD FRIO ===\n  {\n    nome: 'Lead Frio - Sem interesse',\n    mensagens: [\n      'oi',\n      'não tenho interesse',\n      'é muito caro',\n      'já uso outra ferramenta',\n      'depois eu vejo'\n    ],\n    temperatura_esperada: 'frio'\n  },\n  \n  // === LEAD MORNO ===\n  {\n    nome: 'Lead Morno - Curioso',\n    mensagens: [\n      'boa tarde',\n      'como funciona isso?',\n      'quanto custa?',\n      'funciona pro meu negócio?',\n      'vocês tem suporte?'\n    ],\n    temperatura_esperada: 'morno'\n  },\n  \n  // === LEAD QUENTE ===\n  {\n    nome: 'Lead Quente - Pronto para comprar',\n    mensagens: [\n      'olá!',\n      'quero contratar',\n      'me manda o link de pagamento',\n      'aceita PIX?',\n      'posso começar hoje?'\n    ],\n    temperatura_esperada: 'quente'\n  },\n  \n  // === TESTE RAG ===\n  {\n    nome: 'Teste RAG - Perguntas específicas',\n    mensagens: [\n      'qual o horário de funcionamento?',\n      'vocês fazem entrega?',\n      'qual a política de devolução?',\n      'quais formas de pagamento?'\n    ],\n    temperatura_esperada: 'morno'\n  },\n  \n  // === TESTE CATÁLOGO ===\n  {\n    nome: 'Teste Catálogo - Pedir imagens',\n    mensagens: [\n      'quero ver os planos',\n      'me mostra as opções',\n      'tem foto dos produtos?'\n    ],\n    temperatura_esperada: 'quente'\n  }\n];\n\n// ==========================================\n// SELEÇÃO DO CENÁRIO\n// ==========================================\n\n// Pega input do webhook ou seleciona aleatório\nconst input = $input.first()?.json || {};\nlet cenarioIndex = input.cenario !== undefined ? input.cenario : Math.floor(Math.random() * CENARIOS.length);\nlet mensagemIndex = input.mensagem !== undefined ? input.mensagem : Math.floor(Math.random() * CENARIOS[cenarioIndex].mensagens.length);\n\nconst cenario = CENARIOS[cenarioIndex];\nconst mensagem = cenario.mensagens[mensagemIndex];\n\n// Gera dados simulados\nconst conversation_id = `teste-${Date.now()}`;\nconst lead_id = `lead-teste-${Date.now()}`;\nconst pushName = 'Lead de Teste';\n\nreturn [{\n  json: {\n    // Configurações\n    ...CONFIG,\n    \n    // Dados do Cenário\n    cenario_nome: cenario.nome,\n    cenario_index: cenarioIndex,\n    mensagem_index: mensagemIndex,\n    temperatura_esperada: cenario.temperatura_esperada,\n    \n    // Dados da Mensagem Simulada\n    mensagem: mensagem,\n    pushName: pushName,\n    conversation_id: conversation_id,\n    lead_id: lead_id,\n    \n    // Metadados\n    timestamp: Date.now(),\n    fromMe: false,\n    mensagem_de_audio: false,\n    mensagem_de_imagem: false,\n    mensagem_de_grupo: false\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [0, 100],
+      "id": "gerar-cenario",
+      "name": "Gerar Cenário de Teste"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.webhook_principal }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"telefone\": \"{{ $json.telefone_teste }}\",\n  \"instancia\": \"{{ $json.instancia }}\",\n  \"mensagem\": \"{{ $json.mensagem }}\",\n  \"mensagem_de_audio\": {{ $json.mensagem_de_audio }},\n  \"mensagem_de_imagem\": {{ $json.mensagem_de_imagem }},\n  \"url_midia\": \"\",\n  \"timestamp\": {{ $json.timestamp }},\n  \"mensagem_de_grupo\": {{ $json.mensagem_de_grupo }},\n  \"server_url\": \"{{ $json.server_url }}\",\n  \"fromMe\": {{ $json.fromMe }},\n  \"apikey\": \"{{ $json.apikey }}\",\n  \"pushName\": \"{{ $json.pushName }}\"\n}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [280, 100],
+      "id": "chamar-etapa01",
+      "name": "Chamar ETAPA_01"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst cenario = $('Gerar Cenário de Teste').first().json;\n\n// Análise do resultado\nconst resultado = {\n  teste: {\n    cenario: cenario.cenario_nome,\n    mensagem_enviada: cenario.mensagem,\n    temperatura_esperada: cenario.temperatura_esperada\n  },\n  resposta: {\n    status: input.statusCode || 'OK',\n    dados: input\n  },\n  timestamp: new Date().toISOString()\n};\n\nreturn [{ json: resultado }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [520, 100],
+      "id": "analisar-resultado",
+      "name": "Analisar Resultado"
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "tableId": "test_logs",
+        "fieldsToSend": "autoMapInputData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [760, 0],
+      "id": "salvar-log",
+      "name": "Salvar Log (Opcional)",
+      "disabled": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "36cYNGuho8l040lJ",
+          "name": "Synapse"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [760, 200],
+      "id": "responder",
+      "name": "Responder"
+    },
+    {
+      "parameters": {
+        "content": "## 🧪 Simulador de Testes - Synapse\n\n### Como usar:\n\n**1. Teste Manual (um por vez):**\n```\nPOST /webhook/teste-conversa\n{\n  \"cenario\": 0,  // 0-4\n  \"mensagem\": 0  // índice da mensagem\n}\n```\n\n**2. Teste Automático:**\nAtive o trigger de schedule para enviar mensagens a cada 30s\n\n### Cenários disponíveis:\n- **0**: Lead Frio (sem interesse)\n- **1**: Lead Morno (curioso)\n- **2**: Lead Quente (pronto pra comprar)\n- **3**: Teste RAG (perguntas específicas)\n- **4**: Teste Catálogo (pedir imagens)\n\n### ⚠️ IMPORTANTE:\nAltere `telefone_teste` no node \"Gerar Cenário\" para seu número!",
+        "height": 460,
+        "width": 380
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-700, -100],
+      "id": "nota-instrucoes",
+      "name": "Instruções"
+    },
+    {
+      "parameters": {
+        "content": "## 🔄 Teste em Loop\n\nPara testar múltiplas mensagens em sequência, use o workflow abaixo.\n\nEle envia todas as mensagens de um cenário com delay entre elas.",
+        "height": 140,
+        "width": 300
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [1000, -100],
+      "id": "nota-loop",
+      "name": "Teste Loop"
+    },
+    {
+      "parameters": {
+        "path": "teste-loop",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [1000, 100],
+      "id": "trigger-loop",
+      "name": "Trigger Loop",
+      "webhookId": "teste-loop-webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Configuração do teste em loop\nconst CONFIG = {\n  workspace_id: '4f2e7764-d713-4a19-a7ef-b6bda4f960dd',\n  server_url: 'https://evo-gwo8ss8wk48w8gg4kw8ggows.coolify.synapseautomacao.com.br',\n  apikey: '1F681DF7-90EE-43C1-B122-A4277BDFB642',\n  instancia: 'ws_4f2e7764_1766891265259',\n  telefone_teste: '5535999999999', // ALTERE!\n  webhook_principal: 'https://n8n.synapseautomacao.com.br/webhook/ETAPA_01'\n};\n\nconst input = $input.first()?.json?.body || {};\nconst cenarioIndex = input.cenario || 2; // Default: Lead Quente\n\nconst CENARIOS = [\n  ['oi', 'não tenho interesse', 'é caro', 'depois vejo'],\n  ['boa tarde', 'como funciona?', 'quanto custa?', 'tem suporte?'],\n  ['olá!', 'quero contratar', 'manda o link', 'aceita PIX?', 'posso começar hoje?'],\n  ['horário de funcionamento?', 'fazem entrega?', 'formas de pagamento?'],\n  ['quero ver os planos', 'mostra as opções']\n];\n\nconst mensagens = CENARIOS[cenarioIndex];\n\nreturn mensagens.map((msg, idx) => ({\n  json: {\n    ...CONFIG,\n    mensagem: msg,\n    mensagem_index: idx,\n    total_mensagens: mensagens.length,\n    pushName: 'Lead Teste Loop',\n    timestamp: Date.now() + (idx * 1000),\n    fromMe: false,\n    mensagem_de_audio: false,\n    mensagem_de_imagem: false,\n    mensagem_de_grupo: false\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1240, 100],
+      "id": "gerar-loop",
+      "name": "Gerar Todas Mensagens"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.webhook_principal }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"telefone\": \"{{ $json.telefone_teste }}\",\n  \"instancia\": \"{{ $json.instancia }}\",\n  \"mensagem\": \"{{ $json.mensagem }}\",\n  \"mensagem_de_audio\": {{ $json.mensagem_de_audio }},\n  \"mensagem_de_imagem\": {{ $json.mensagem_de_imagem }},\n  \"url_midia\": \"\",\n  \"timestamp\": {{ $json.timestamp }},\n  \"mensagem_de_grupo\": {{ $json.mensagem_de_grupo }},\n  \"server_url\": \"{{ $json.server_url }}\",\n  \"fromMe\": {{ $json.fromMe }},\n  \"apikey\": \"{{ $json.apikey }}\",\n  \"pushName\": \"{{ $json.pushName }}\"\n}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 5000
+            }
+          },
+          "timeout": 60000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1480, 100],
+      "id": "enviar-loop",
+      "name": "Enviar com Delay 5s"
+    },
+    {
+      "parameters": {
+        "jsCode": "const resultados = $input.all();\n\nreturn [{\n  json: {\n    teste_completo: true,\n    total_mensagens: resultados.length,\n    resultados: resultados.map(r => r.json),\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1720, 100],
+      "id": "resumo-loop",
+      "name": "Resumo do Teste"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1960, 100],
+      "id": "responder-loop",
+      "name": "Responder Loop"
+    }
+  ],
+  "connections": {
+    "Trigger Automático (30s)": {
+      "main": [
+        [
+          {
+            "node": "Gerar Cenário de Teste",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trigger Manual": {
+      "main": [
+        [
+          {
+            "node": "Gerar Cenário de Teste",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gerar Cenário de Teste": {
+      "main": [
+        [
+          {
+            "node": "Chamar ETAPA_01",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chamar ETAPA_01": {
+      "main": [
+        [
+          {
+            "node": "Analisar Resultado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analisar Resultado": {
+      "main": [
+        [
+          {
+            "node": "Salvar Log (Opcional)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Responder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trigger Loop": {
+      "main": [
+        [
+          {
+            "node": "Gerar Todas Mensagens",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gerar Todas Mensagens": {
+      "main": [
+        [
+          {
+            "node": "Enviar com Delay 5s",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar com Delay 5s": {
+      "main": [
+        [
+          {
+            "node": "Resumo do Teste",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resumo do Teste": {
+      "main": [
+        [
+          {
+            "node": "Responder Loop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": "68f027398f9e5e58fc709533816859718778176c42991d45f89e26a1e44ad6b9"
+  }
+}

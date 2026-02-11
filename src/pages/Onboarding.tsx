@@ -1,39 +1,77 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, Link, useSearchParams } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { MessageSquare, Building2, Loader2, ArrowRight, Sparkles, CheckCircle, User, Phone, Mail, Briefcase } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { z } from 'zod';
+import { useState, useEffect } from "react";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  MessageSquare,
+  Building2,
+  Loader2,
+  ArrowRight,
+  Sparkles,
+  CheckCircle,
+  User,
+  Phone,
+  Mail,
+  Briefcase,
+} from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { z } from "zod";
+import { Logo } from "@/components/Logo";
 
 const step1Schema = z.object({
-  fullName: z.string().trim().min(2, 'Nome deve ter no mínimo 2 caracteres').max(100, 'Nome deve ter no máximo 100 caracteres'),
-  phone: z.string().trim().min(10, 'Telefone deve ter no mínimo 10 dígitos').max(20, 'Telefone inválido').optional().or(z.literal('')),
+  fullName: z
+    .string()
+    .trim()
+    .min(2, "Nome deve ter no mínimo 2 caracteres")
+    .max(100, "Nome deve ter no máximo 100 caracteres"),
+  phone: z
+    .string()
+    .trim()
+    .min(10, "Telefone deve ter no mínimo 10 dígitos")
+    .max(20, "Telefone inválido")
+    .optional()
+    .or(z.literal("")),
 });
 
 const step2Schema = z.object({
-  companyName: z.string().trim().min(2, 'Nome da empresa deve ter no mínimo 2 caracteres').max(50, 'Nome da empresa deve ter no máximo 50 caracteres'),
-  position: z.string().trim().max(50, 'Cargo deve ter no máximo 50 caracteres').optional().or(z.literal('')),
+  companyName: z
+    .string()
+    .trim()
+    .min(2, "Nome da empresa deve ter no mínimo 2 caracteres")
+    .max(50, "Nome da empresa deve ter no máximo 50 caracteres"),
+  position: z
+    .string()
+    .trim()
+    .max(50, "Cargo deve ter no máximo 50 caracteres")
+    .optional()
+    .or(z.literal("")),
 });
 
 const Onboarding = () => {
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   // Step 1: Admin data
-  const [fullName, setFullName] = useState('');
-  const [phone, setPhone] = useState('');
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
 
   // Step 2: Company data
-  const [companyName, setCompanyName] = useState('');
-  const [position, setPosition] = useState('');
+  const [companyName, setCompanyName] = useState("");
+  const [position, setPosition] = useState("");
 
-  const { user, profile, workspace, createWorkspace, updateProfile } = useAuth();
+  const { user, profile, workspace, createWorkspace, updateProfile } =
+    useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
@@ -50,20 +88,20 @@ const Onboarding = () => {
   // Check if user already completed onboarding
   useEffect(() => {
     if (profile?.onboarding_completed && workspace) {
-      navigate('/dashboard', { replace: true });
+      navigate("/dashboard", { replace: true });
     }
   }, [profile, workspace, navigate]);
 
   // If no user, redirect to auth
   useEffect(() => {
     if (!user) {
-      navigate('/auth', { replace: true });
+      navigate("/auth", { replace: true });
     }
   }, [user, navigate]);
 
   const handleStep1Submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
 
     const result = step1Schema.safeParse({ fullName, phone });
     if (!result.success) {
@@ -79,7 +117,7 @@ const Onboarding = () => {
     });
 
     if (updateError) {
-      setError(updateError.message || 'Erro ao salvar dados');
+      setError(updateError.message || "Erro ao salvar dados");
       setIsLoading(false);
       return;
     }
@@ -90,7 +128,7 @@ const Onboarding = () => {
 
   const handleStep2Submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
 
     const result = step2Schema.safeParse({ companyName, position });
     if (!result.success) {
@@ -100,24 +138,24 @@ const Onboarding = () => {
 
     setIsLoading(true);
 
-    const inviteId = searchParams.get('invite');
+    const inviteId = searchParams.get("invite");
 
     if (inviteId) {
       // Handle invitation acceptance
       try {
         const { data: invite, error: inviteError } = await supabase
-          .from('team_invites')
-          .select('*')
-          .eq('id', inviteId)
+          .from("team_invites")
+          .select("*")
+          .eq("id", inviteId)
           .single();
 
-        if (inviteError || !invite || invite.status !== 'pending') {
-          throw new Error('Convite inválido ou já expirado.');
+        if (inviteError || !invite || invite.status !== "pending") {
+          throw new Error("Convite inválido ou já expirado.");
         }
 
         // Add user to workspace
         const { error: memberError } = await supabase
-          .from('workspace_members')
+          .from("workspace_members")
           .insert({
             workspace_id: invite.workspace_id,
             user_id: user.id,
@@ -128,28 +166,28 @@ const Onboarding = () => {
 
         // Update invite status
         await supabase
-          .from('team_invites')
-          .update({ status: 'accepted' })
-          .eq('id', inviteId);
+          .from("team_invites")
+          .update({ status: "accepted" })
+          .eq("id", inviteId);
 
         // Update profile
         await updateProfile({
           current_workspace_id: invite.workspace_id,
-          onboarding_completed: true
+          onboarding_completed: true,
         });
 
         toast({
-          title: 'Convite aceito!',
-          description: 'Você agora faz parte da equipe.',
+          title: "Convite aceito!",
+          description: "Você agora faz parte da equipe.",
         });
 
         setStep(3);
-        setTimeout(() => navigate('/dashboard', { replace: true }), 2500);
+        setTimeout(() => navigate("/dashboard", { replace: true }), 2500);
         return;
       } catch (err: any) {
         toast({
-          variant: 'destructive',
-          title: 'Erro ao aceitar convite',
+          variant: "destructive",
+          title: "Erro ao aceitar convite",
           description: err.message,
         });
         setIsLoading(false);
@@ -163,19 +201,20 @@ const Onboarding = () => {
     });
 
     if (profileError) {
-      setError(profileError.message || 'Erro ao salvar dados da empresa');
+      setError(profileError.message || "Erro ao salvar dados da empresa");
       setIsLoading(false);
       return;
     }
 
     // Create workspace
-    const { error: createError, workspace: newWorkspace } = await createWorkspace(companyName.trim());
+    const { error: createError, workspace: newWorkspace } =
+      await createWorkspace(companyName.trim());
 
     if (createError) {
-      setError(createError.message || 'Erro ao criar workspace');
+      setError(createError.message || "Erro ao criar workspace");
       toast({
-        variant: 'destructive',
-        title: 'Erro ao criar workspace',
+        variant: "destructive",
+        title: "Erro ao criar workspace",
         description: createError.message,
       });
       setIsLoading(false);
@@ -185,20 +224,20 @@ const Onboarding = () => {
     // Create default workspace settings
     if (newWorkspace?.id) {
       await supabase
-        .from('workspace_settings')
+        .from("workspace_settings")
         .insert({ workspace_id: newWorkspace.id });
     }
 
     setStep(3);
 
     toast({
-      title: 'Configuração concluída!',
-      description: 'Seu workspace está pronto para uso.',
+      title: "Configuração concluída!",
+      description: "Seu workspace está pronto para uso.",
     });
 
     // Redirect after a short delay to show success state
     setTimeout(() => {
-      navigate('/dashboard', { replace: true });
+      navigate("/dashboard", { replace: true });
     }, 2500);
   };
 
@@ -224,18 +263,22 @@ const Onboarding = () => {
 
       <Card className="w-full max-w-md relative z-10 border-border/50 bg-card/80 backdrop-blur-sm">
         <CardHeader className="text-center space-y-4">
-          <Link to="/" className="flex items-center justify-center gap-2 hover:opacity-80 transition-opacity">
-            <div className="p-2 bg-primary/20 rounded-lg">
-              <MessageSquare className="w-6 h-6 text-primary" />
-            </div>
-            <span className="text-xl font-bold">WhatsMetrics</span>
+          <Link
+            to="/"
+            className="flex items-center justify-center gap-2 hover:opacity-80 transition-opacity"
+          >
+            <Logo className="h-12" />
           </Link>
 
           {/* Step indicators */}
           {step < 3 && (
             <div className="flex items-center justify-center gap-2">
-              <div className={`w-8 h-1 rounded-full transition-colors ${step >= 1 ? 'bg-primary' : 'bg-muted'}`} />
-              <div className={`w-8 h-1 rounded-full transition-colors ${step >= 2 ? 'bg-primary' : 'bg-muted'}`} />
+              <div
+                className={`w-8 h-1 rounded-full transition-colors ${step >= 1 ? "bg-primary" : "bg-muted"}`}
+              />
+              <div
+                className={`w-8 h-1 rounded-full transition-colors ${step >= 2 ? "bg-primary" : "bg-muted"}`}
+              />
             </div>
           )}
 
@@ -298,7 +341,7 @@ const Onboarding = () => {
                     value={fullName}
                     onChange={(e) => {
                       setFullName(e.target.value);
-                      setError('');
+                      setError("");
                     }}
                     placeholder="Seu nome completo"
                     className="pl-10"
@@ -318,7 +361,7 @@ const Onboarding = () => {
                     value={phone}
                     onChange={(e) => {
                       setPhone(e.target.value);
-                      setError('');
+                      setError("");
                     }}
                     placeholder="(11) 99999-9999"
                     className="pl-10"
@@ -332,11 +375,13 @@ const Onboarding = () => {
                 </p>
               </div>
 
-              {error && (
-                <p className="text-sm text-destructive">{error}</p>
-              )}
+              {error && <p className="text-sm text-destructive">{error}</p>}
 
-              <Button type="submit" className="w-full" disabled={isLoading || !fullName.trim()}>
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={isLoading || !fullName.trim()}
+              >
                 {isLoading ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -363,7 +408,7 @@ const Onboarding = () => {
                     value={companyName}
                     onChange={(e) => {
                       setCompanyName(e.target.value);
-                      setError('');
+                      setError("");
                     }}
                     placeholder="Nome da sua empresa"
                     className="pl-10"
@@ -383,7 +428,7 @@ const Onboarding = () => {
                     value={position}
                     onChange={(e) => {
                       setPosition(e.target.value);
-                      setError('');
+                      setError("");
                     }}
                     placeholder="Ex: CEO, Gerente, Vendedor"
                     className="pl-10"
@@ -396,9 +441,7 @@ const Onboarding = () => {
                 </p>
               </div>
 
-              {error && (
-                <p className="text-sm text-destructive">{error}</p>
-              )}
+              {error && <p className="text-sm text-destructive">{error}</p>}
 
               <div className="flex gap-2">
                 <Button
@@ -410,7 +453,11 @@ const Onboarding = () => {
                 >
                   Voltar
                 </Button>
-                <Button type="submit" className="flex-1" disabled={isLoading || !companyName.trim()}>
+                <Button
+                  type="submit"
+                  className="flex-1"
+                  disabled={isLoading || !companyName.trim()}
+                >
                   {isLoading ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -430,7 +477,10 @@ const Onboarding = () => {
           {step === 3 && (
             <div className="space-y-4">
               <div className="w-full bg-secondary rounded-full h-2 overflow-hidden">
-                <div className="bg-primary h-2 rounded-full animate-pulse" style={{ width: '100%' }} />
+                <div
+                  className="bg-primary h-2 rounded-full animate-pulse"
+                  style={{ width: "100%" }}
+                />
               </div>
 
               <div className="space-y-2 text-sm">

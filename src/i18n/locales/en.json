@@ -71,7 +71,9 @@
     "churnAnalytics": "Churn Analytics",
     "aiAnalytics": "AI Analytics",
     "subscription": "Subscription",
-    "pixel": "Tracking Pixel"
+    "pixel": "Tracking Pixel",
+    "ranking": "Ranking",
+    "catalog": "Catalog"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -185,7 +187,7 @@
     "leadsReport": "Leads Report",
     "teamReport": "Team Report"
   },
-"settings": {
+  "settings": {
     "title": "Settings",
     "subtitle": "Manage your workspace settings and preferences",
     "workspace": "Workspace",

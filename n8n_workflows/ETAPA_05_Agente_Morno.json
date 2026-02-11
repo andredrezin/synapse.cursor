@@ -1,0 +1,328 @@
+{
+  "name": "ETAPA_05_Agente_Morno",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "ETAPA_05_Agente_Morno",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 250],
+      "id": "webhook_morno",
+      "name": "Webhook - Recebe Lead Morno",
+      "webhookId": "etapa05-agente-morno"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "workspace_id",
+              "name": "workspace_id",
+              "value": "={{ $json.workspace_id }}",
+              "type": "string"
+            },
+            {
+              "id": "lead_id",
+              "name": "lead_id",
+              "value": "={{ $json.lead_id }}",
+              "type": "string"
+            },
+            {
+              "id": "telefone",
+              "name": "telefone",
+              "value": "={{ $json.telefone }}",
+              "type": "string"
+            },
+            {
+              "id": "mensagem",
+              "name": "mensagem",
+              "value": "={{ $json.mensagem }}",
+              "type": "string"
+            },
+            {
+              "id": "conversation_id",
+              "name": "conversation_id",
+              "value": "={{ $json.conversation_id }}",
+              "type": "string"
+            },
+            {
+              "id": "contexto_rag",
+              "name": "contexto_rag",
+              "value": "={{ $json.contexto_rag }}",
+              "type": "string"
+            },
+            {
+              "id": "temperatura",
+              "name": "temperatura",
+              "value": "={{ $json.temperatura }}",
+              "type": "string"
+            },
+            {
+              "id": "intencao",
+              "name": "intencao",
+              "value": "={{ $json.intencao }}",
+              "type": "string"
+            },
+            {
+              "id": "server_url",
+              "name": "server_url",
+              "value": "={{ $json.server_url }}",
+              "type": "string"
+            },
+            {
+              "id": "apikey",
+              "name": "apikey",
+              "value": "={{ $json.apikey }}",
+              "type": "string"
+            },
+            {
+              "id": "instancia",
+              "name": "instancia",
+              "value": "={{ $json.instancia }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [250, 250],
+      "id": "extrair_dados",
+      "name": "Extrair Dados"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "ai_settings",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "workspace_id",
+              "keyValue": "={{ $json.workspace_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [500, 250],
+      "id": "buscar_config_ia",
+      "name": "Buscar Config IA",
+      "credentials": {
+        "supabaseApi": {
+          "id": "36cYNGuho8l040lJ",
+          "name": "Synapse"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const config = $input.first().json;\nconst dados = $('Extrair Dados').first().json;\n\n// Monta o prompt personalizado\nconst aiName = config.ai_name || 'Marcela';\nconst businessName = config.business_name || 'Synapse';\nconst personality = config.ai_personality || 'amigavel e consultiva';\nconst tone = config.language_tone || 'profissional mas acolhedor';\n\nreturn [{\n  json: {\n    ...dados,\n    ai_name: aiName,\n    business_name: businessName,\n    ai_personality: personality,\n    language_tone: tone,\n    system_prompt: config.system_prompt || ''\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [750, 250],
+      "id": "preparar_contexto",
+      "name": "Preparar Contexto"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.conversation_id }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [1000, 450],
+      "id": "postgres_memory",
+      "name": "Postgres Memory",
+      "credentials": {
+        "postgres": {
+          "id": "oXY1gb5teeQPH7Z8",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "temperature": 0.7
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [1000, 550],
+      "id": "gemini_model",
+      "name": "Google Gemini",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "RwYV7rx4LxAxqh8Y",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Voce e {{ $json.ai_name }}, assistente de vendas da {{ $json.business_name }}.\n\nSUA PERSONALIDADE: {{ $json.ai_personality }}\nTOM DE VOZ: {{ $json.language_tone }}\n\n---\nSITUACAO DO LEAD:\n- Temperatura: MORNO (tem duvidas, esta comparando opcoes)\n- Intencao detectada: {{ $json.intencao }}\n- Mensagem do lead: \"{{ $json.mensagem }}\"\n\n---\nCONTEXTO DA BASE DE CONHECIMENTO:\n{{ $json.contexto_rag }}\n\n---\nSUA MISSAO COMO NURTURING EXPERT:\n1. Responda a duvida do lead de forma CLARA e EDUCATIVA\n2. Use informacoes do contexto RAG para embasar sua resposta\n3. Supere objecoes com argumentos solidos\n4. Mostre diferenciais e beneficios\n5. Conduza suavemente para o proximo passo (sem pressionar)\n6. Faca UMA pergunta para manter o dialogo\n\n---\nREGRAS:\n- Resposta curta (maximo 3 paragrafos)\n- Use emojis com moderacao (1-2 max)\n- Seja consultivo, nao vendedor agressivo\n- Se nao souber algo, diga que vai verificar\n- NUNCA invente informacoes de preco ou prazo sem ter no RAG\n\n---\nRESPONDA AGORA de forma natural e acolhedora:",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.6,
+      "position": [1000, 250],
+      "id": "agente_morno",
+      "name": "Agente Morno - Nurturing Expert"
+    },
+    {
+      "parameters": {
+        "jsCode": "const agentOutput = $input.first().json.output || '';\nconst dados = $('Extrair Dados').first().json;\n\n// Limpa a resposta\nlet resposta = agentOutput.trim();\n\n// Remove aspas extras se houver\nif (resposta.startsWith('\"') && resposta.endsWith('\"')) {\n  resposta = resposta.slice(1, -1);\n}\n\nreturn [{\n  json: {\n    resposta_final: resposta,\n    telefone: dados.telefone,\n    server_url: dados.server_url,\n    apikey: dados.apikey,\n    instancia: dados.instancia,\n    lead_id: dados.lead_id,\n    workspace_id: dados.workspace_id,\n    conversation_id: dados.conversation_id,\n    temperatura: 'morno',\n    processado_em: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1250, 250],
+      "id": "preparar_resposta",
+      "name": "Preparar Resposta"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.server_url }}/message/sendText/{{ $json.instancia }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $json.apikey }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{ $json.telefone }}\",\n  \"text\": \"{{ $json.resposta_final }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1500, 250],
+      "id": "enviar_whatsapp",
+      "name": "Enviar WhatsApp (Evolution)"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "leads",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "keyValue": "={{ $json.lead_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "updated_at",
+              "fieldValue": "={{ $json.processado_em }}"
+            },
+            {
+              "fieldId": "last_emotion",
+              "fieldValue": "Morno - Nurturing"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1750, 250],
+      "id": "atualizar_lead",
+      "name": "Atualizar Lead",
+      "credentials": {
+        "supabaseApi": {
+          "id": "36cYNGuho8l040lJ",
+          "name": "Synapse"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "messages",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "conversation_id",
+              "fieldValue": "={{ $('Preparar Resposta').item.json.conversation_id }}"
+            },
+            {
+              "fieldId": "content",
+              "fieldValue": "={{ $('Preparar Resposta').item.json.resposta_final }}"
+            },
+            {
+              "fieldId": "sender_type",
+              "fieldValue": "ai"
+            },
+            {
+              "fieldId": "message_type",
+              "fieldValue": "text"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1750, 450],
+      "id": "salvar_mensagem",
+      "name": "Salvar Mensagem IA",
+      "credentials": {
+        "supabaseApi": {
+          "id": "36cYNGuho8l040lJ",
+          "name": "Synapse"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook - Recebe Lead Morno": {
+      "main": [[{"node": "Extrair Dados", "type": "main", "index": 0}]]
+    },
+    "Extrair Dados": {
+      "main": [[{"node": "Buscar Config IA", "type": "main", "index": 0}]]
+    },
+    "Buscar Config IA": {
+      "main": [[{"node": "Preparar Contexto", "type": "main", "index": 0}]]
+    },
+    "Preparar Contexto": {
+      "main": [[{"node": "Agente Morno - Nurturing Expert", "type": "main", "index": 0}]]
+    },
+    "Postgres Memory": {
+      "ai_memory": [[{"node": "Agente Morno - Nurturing Expert", "type": "ai_memory", "index": 0}]]
+    },
+    "Google Gemini": {
+      "ai_languageModel": [[{"node": "Agente Morno - Nurturing Expert", "type": "ai_languageModel", "index": 0}]]
+    },
+    "Agente Morno - Nurturing Expert": {
+      "main": [[{"node": "Preparar Resposta", "type": "main", "index": 0}]]
+    },
+    "Preparar Resposta": {
+      "main": [[{"node": "Enviar WhatsApp (Evolution)", "type": "main", "index": 0}]]
+    },
+    "Enviar WhatsApp (Evolution)": {
+      "main": [
+        [
+          {"node": "Atualizar Lead", "type": "main", "index": 0},
+          {"node": "Salvar Mensagem IA", "type": "main", "index": 0}
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "68f027398f9e5e58fc709533816859718778176c42991d45f89e26a1e44ad6b9"
+  }
+}

@@ -1,0 +1,364 @@
+{
+  "name": "ETAPA_05_Agente_Morno",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "ETAPA_05_Agente_Morno",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [-240, 32],
+      "id": "4f1c882f-69ae-4eb2-a0aa-9d66be9c4c78",
+      "name": "Webhook - Recebe Lead Morno",
+      "webhookId": "etapa05-agente-morno"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d109e6eb-33ce-4ab1-891c-a40d9b31ff2c",
+              "name": "telefone",
+              "value": "={{ $json.body.telefone }}",
+              "type": "string"
+            },
+            {
+              "id": "819cdcc6-94ff-444d-8523-e1cf8b321ef9",
+              "name": "instancia",
+              "value": "={{ $json.body.instancia }}",
+              "type": "string"
+            },
+            {
+              "id": "c1f644ec-ec6e-420f-8b24-e6cc394ad4cd",
+              "name": "mensagem",
+              "value": "={{ $json.body.mensagem }}",
+              "type": "string"
+            },
+            {
+              "id": "aeb8dd7d-4900-4890-a0b8-bbbeac120947",
+              "name": "mensagem_de_audio",
+              "value": "={{ $json.body.mensagem_de_audio }}",
+              "type": "boolean"
+            },
+            {
+              "id": "7a842a78-6b71-4dff-ae71-92ed6e09b8fc",
+              "name": "mensagem_de_imagem",
+              "value": "={{ $json.body.mensagem_de_imagem }}",
+              "type": "boolean"
+            },
+            {
+              "id": "67736eb3-c8b1-45c2-992a-c450a6fb3daf",
+              "name": "url_midia",
+              "value": "={{ $json.body.url_midia }}",
+              "type": "string"
+            },
+            {
+              "id": "f545b0a1-53f0-4431-b59a-1eca2e3a3a32",
+              "name": "timestamp",
+              "value": "={{ $json.body.timestamp }}",
+              "type": "number"
+            },
+            {
+              "id": "37107b3a-b413-4185-9950-e71a0fa312d8",
+              "name": "mensagem_de_grupo",
+              "value": "={{ $json.body.mensagem_de_grupo }}",
+              "type": "boolean"
+            },
+            {
+              "id": "de609fad-8142-4ed5-8cae-87817114a555",
+              "name": "server_url",
+              "value": "={{ $json.body.server_url }}",
+              "type": "string"
+            },
+            {
+              "id": "64de2414-b94e-4c31-ad9e-26d488f1cc9e",
+              "name": "fromMe",
+              "value": "={{ $json.body.fromMe }}",
+              "type": "boolean"
+            },
+            {
+              "id": "5ebe4c42-3ff8-4894-81d4-ad761613b2d7",
+              "name": "apikey",
+              "value": "={{ $json.body.apikey }}",
+              "type": "string"
+            },
+            {
+              "id": "e6292b7a-e588-4f6f-b0c3-d0e97076fb34",
+              "name": "chat_history",
+              "value": "={{ $json.body.chat_history }}",
+              "type": "string"
+            },
+            {
+              "id": "fb60d0ba-e684-4f87-b74b-d4cc42ac70a0",
+              "name": "conversation_id",
+              "value": "={{ $json.body.conversation_id }}",
+              "type": "string"
+            },
+            {
+              "id": "55ca4687-7036-4e3a-b935-396a47f21dbf",
+              "name": "workspace_id",
+              "value": "={{ $json.body.workspace_id }}",
+              "type": "string"
+            },
+            {
+              "id": "aca3cda4-dbb5-40cf-aeab-26d0280d3f76",
+              "name": "lead_id",
+              "value": "={{ $json.body.lead_id }}",
+              "type": "string"
+            },
+            {
+              "id": "fd137c72-c931-4f1a-9d08-af09594e6171",
+              "name": "container_Tenant.id",
+              "value": "={{ $json.body.container_Tenant.id }}",
+              "type": "string"
+            },
+            {
+              "id": "2b8814f2-5251-4794-b0a9-30c121e0ee72",
+              "name": "container_Tenant.key_hash",
+              "value": "={{ $json.body.container_Tenant.key_hash }}",
+              "type": "string"
+            },
+            {
+              "id": "a90502a5-f4e4-46f3-929e-465c4cc51cf9",
+              "name": "container_Tenant.name",
+              "value": "={{ $json.body.container_Tenant.name }}",
+              "type": "string"
+            },
+            {
+              "id": "f5b665a8-507a-4db2-b9b9-93ffe83474b1",
+              "name": "container_Tenant.is_active",
+              "value": "={{ $json.body.container_Tenant.is_active }}",
+              "type": "boolean"
+            },
+            {
+              "id": "4d019ad2-974e-4506-8540-f86ebfaa3ae4",
+              "name": "container_Tenant.created_at",
+              "value": "={{ $json.body.container_Tenant.created_at }}",
+              "type": "string"
+            },
+            {
+              "id": "9679b7b9-13ce-44e5-abae-62d68b1e9bc7",
+              "name": "container_Tenant.api_key",
+              "value": "={{ $json.body.container_Tenant.api_key }}",
+              "type": "string"
+            },
+            {
+              "id": "f3dcc802-2af5-4367-9255-ce79fa787ede",
+              "name": "pushName",
+              "value": "={{ $json.body.pushName }}",
+              "type": "string"
+            },
+            {
+              "id": "880849d8-775f-45c2-a315-f10eaebf361d",
+              "name": "temperatura",
+              "value": "={{ $json.body.temperatura }}",
+              "type": "string"
+            },
+            {
+              "id": "28c2eb71-da00-4691-bd6d-bc716f28d429",
+              "name": "confianca",
+              "value": "={{ $json.body.confianca }}",
+              "type": "number"
+            },
+            {
+              "id": "5a4dd307-eb1a-4066-a0b3-c40492f9039f",
+              "name": "justificativa",
+              "value": "={{ $json.body.justificativa }}",
+              "type": "string"
+            },
+            {
+              "id": "ac78a84a-66b7-447b-9731-c54c75facace",
+              "name": "contexto_rag",
+              "value": "={{ $json.body.contexto_rag }}",
+              "type": "string"
+            },
+            {
+              "id": "fd2966ee-d9b8-488a-9f2a-918fd44c5e12",
+              "name": "intencao",
+              "value": "={{ $json.body.intencao }}",
+              "type": "string"
+            },
+            {
+              "id": "sentimento-id",
+              "name": "sentimento",
+              "value": "={{ $json.body.sentimento || 'Neutro' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [64, 32],
+      "id": "dcc1aae5-d4fe-4253-8e00-49db31a4e21c",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "ai_settings",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "workspace_id",
+              "keyValue": "={{ $json.workspace_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [304, 32],
+      "id": "93e57744-7a56-4833-94d2-abaf82068387",
+      "name": "Buscar Config IA",
+      "credentials": {
+        "supabaseApi": { "id": "36cYNGuho8l040lJ", "name": "Synapse" }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const config = $input.first().json;\nconst dados = $('Edit Fields1').first().json;\n\n// SEM FALLBACKS GENERICOS - usa dados do banco\nconst aiName = config.ai_name || '';\nconst businessName = config.business_name || '';\nconst personality = config.ai_personality || 'profissional e consultiva';\nconst tone = config.language_tone || 'acolhedor';\n\n// Log para debug\nif (!aiName || !businessName) {\n  console.log('AVISO: ai_name ou business_name nao encontrados para workspace:', dados.workspace_id);\n}\n\nreturn [{\n  json: {\n    ...dados,\n    ai_name: aiName,\n    business_name: businessName,\n    ai_personality: personality,\n    language_tone: tone,\n    system_prompt: config.system_prompt || '',\n    products_services: config.products_services || '',\n    unique_selling_points: config.unique_selling_points || '',\n    business_description: config.business_description || '',\n    max_message_length: config.max_message_length || 4\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [544, 32],
+      "id": "a691e932-334d-4a68-a3aa-e64eb9083192",
+      "name": "Preparar Contexto"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.conversation_id }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [832, 336],
+      "id": "7ef3341d-32b9-4b85-8adf-20dc48124842",
+      "name": "Postgres Memory",
+      "credentials": {
+        "postgres": { "id": "oXY1gb5teeQPH7Z8", "name": "Postgres account" }
+      }
+    },
+    {
+      "parameters": {
+        "options": { "temperature": 0.65 }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [640, 352],
+      "id": "3dde45ef-9f2d-4494-ba10-4c3b46716431",
+      "name": "Google Gemini",
+      "credentials": {
+        "googlePalmApi": { "id": "RwYV7rx4LxAxqh8Y", "name": "456@gmail.com" }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Voce e {{ $json.ai_name || 'a atendente' }}{{ $json.business_name ? ' da ' + $json.business_name : '' }}.\n\n🧬 PAPEL: Gerar urgencia e desejo em lead MORNO que demonstra interesse.\n\n🎭 PERSONALIDADE\n- {{ $json.ai_personality }}\n- Tom: {{ $json.language_tone }}\n- Comunicacao consultiva, nao vendedora\n- SEM emojis\n\n📋 CONTEXTO DA EMPRESA\n{{ $json.business_description || $json.system_prompt }}\n\n💼 PRODUTOS/SERVICOS\n{{ $json.products_services }}\n\n✨ DIFERENCIAIS\n{{ $json.unique_selling_points }}\n\n🧠 CONTEXTO RAG\n{{ $json.contexto_rag || 'Sem contexto.' }}\n\n---\n🎯 ESTRATEGIA MORNO - URGENCIA E DESEJO\n\n1. Valide o interesse demonstrado\n2. Aprofunde na dor/desejo especifico\n3. Use PROVA SOCIAL (outros clientes)\n4. Crie senso de ESCASSEZ (sem mentir)\n5. Faca pergunta que leve ao proximo passo\n\n---\n🧠 TECNICAS OBRIGATORIAS\n\n- Gatilho de escassez real\n- Prova social especifica\n- Antecipacao do resultado\n- Perguntas de compromisso\n- Frases curtas WhatsApp\n\n---\n⚠️ REGRAS RIGIDAS\n\n- Maximo {{ $json.max_message_length || 4 }} linhas\n- NAO mencione preco exato ainda\n- NAO pareca desesperado\n- NAO use emojis\n\n---\n🚫 NUNCA FACA\n\n- \"Aproveite agora\" generico\n- Mentir sobre escassez\n- Pressionar demais\n- Usar fallbacks genericos\n\n---\n💡 ADAPTACAO\n{{ $json.intencao === 'comprar' ? '- Lead decidido: facilite o proximo passo' : '' }}\n{{ $json.sentimento === 'Positivo' ? '- Lead animado: acelere a conversa' : '' }}\n\n---\nDADOS DO LEAD:\n- Nome: {{ $json.pushName }}\n- Mensagem: \"{{ $json.mensagem }}\"\n- Intencao: {{ $json.intencao }}\n- Sentimento: {{ $json.sentimento || 'Neutro' }}\n\n---\n📝 EXEMPLOS:\n\nLead: \"Como funciona?\"\nVoce: \"A IA responde seus leads 24h! Voce tem muitos leads entrando que ficam sem resposta?\"\n\nLead: \"Quanto custa?\"\nVoce: \"Depende do volume. Quantos atendimentos voce faz por dia? Assim te indico o plano ideal\"\n\nLead: \"Funciona pro meu negocio?\"\nVoce: \"Provavelmente sim! Qual e o seu negocio? Assim te conto se ja temos clientes parecidos\"\n\n---\nRESPONDA AGORA (max {{ $json.max_message_length || 4 }} linhas, SEM emoji):",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.6,
+      "position": [768, 32],
+      "id": "1fc19128-1585-487c-8002-517bef11ed56",
+      "name": "Agente Morno - Nurturing Expert"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst dados = $('Edit Fields1').first().json;\n\n// Extrair resposta do agente (multiplas estruturas possiveis)\nlet resposta = '';\n\nif (input.output && input.output[0] && input.output[0].content && input.output[0].content[0]) {\n  resposta = input.output[0].content[0].text || '';\n} else if (typeof input.output === 'string') {\n  resposta = input.output;\n} else if (typeof input.text === 'string') {\n  resposta = input.text;\n} else if (typeof input.message === 'string') {\n  resposta = input.message;\n} else {\n  resposta = 'Entendi seu interesse. Me conta mais sobre o que voce precisa resolver?';\n}\n\nresposta = String(resposta).trim();\n\n// Remover aspas se a resposta comecar/terminar com elas\nif (resposta.startsWith('\"') && resposta.endsWith('\"')) {\n  resposta = resposta.slice(1, -1);\n}\n\n// Limpar quebras excessivas\nresposta = resposta.replace(/\\n{3,}/g, '\\n\\n').replace(/\\s{2,}/g, ' ');\n\nreturn [{\n  json: {\n    resposta_final: resposta,\n    telefone: dados.telefone,\n    server_url: dados.server_url,\n    apikey: dados.apikey,\n    instancia: dados.instancia,\n    lead_id: dados.lead_id,\n    workspace_id: dados.workspace_id,\n    conversation_id: dados.conversation_id,\n    pushName: dados.pushName,\n    temperatura: 'morno',\n    classificacao: 'Morno',\n    mensagem_de_audio: dados.mensagem_de_audio,\n    processado_em: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1136, 32],
+      "id": "b5f95cc9-f43c-4d75-8126-8cd81147b111",
+      "name": "Preparar Resposta"
+    },
+    {
+      "parameters": {
+        "url": "https://n8n.synapseautomacao.com.br/webhook/webhook-ETAPA_06/resposta-agente",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": { "timeout": 30000 }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1504, 32],
+      "id": "ab0abed6-af87-4674-84d2-a7d58ea2c9e2",
+      "name": "Envia_ETAPA_06_responde_lead"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\"status\": \"ok\", \"stage\": \"Morno\", \"resposta\": \"{{ $('Preparar Resposta').first().json.resposta_final.replace(/\"/g, '\\\\\"').replace(/\\n/g, '\\\\n') }}\"}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1728, 32],
+      "id": "respond-ok-morno",
+      "name": "Respond OK"
+    }
+  ],
+  "connections": {
+    "Webhook - Recebe Lead Morno": {
+      "main": [[{ "node": "Edit Fields1", "type": "main", "index": 0 }]]
+    },
+    "Edit Fields1": {
+      "main": [[{ "node": "Buscar Config IA", "type": "main", "index": 0 }]]
+    },
+    "Buscar Config IA": {
+      "main": [[{ "node": "Preparar Contexto", "type": "main", "index": 0 }]]
+    },
+    "Preparar Contexto": {
+      "main": [
+        [
+          {
+            "node": "Agente Morno - Nurturing Expert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Agente Morno - Nurturing Expert",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Agente Morno - Nurturing Expert",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agente Morno - Nurturing Expert": {
+      "main": [[{ "node": "Preparar Resposta", "type": "main", "index": 0 }]]
+    },
+    "Preparar Resposta": {
+      "main": [
+        [{ "node": "Envia_ETAPA_06_responde_lead", "type": "main", "index": 0 }]
+      ]
+    },
+    "Envia_ETAPA_06_responde_lead": {
+      "main": [[{ "node": "Respond OK", "type": "main", "index": 0 }]]
+    }
+  },
+  "pinData": {},
+  "settings": { "executionOrder": "v1" },
+  "meta": { "templateCredsSetupCompleted": true }
+}

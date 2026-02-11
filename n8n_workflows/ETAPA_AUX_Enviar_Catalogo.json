@@ -1,0 +1,323 @@
+{
+  "name": "ETAPA_AUX - Enviar Catálogo de Imagens",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "enviar-catalogo",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [-100, 0],
+      "id": "webhook-catalogo",
+      "name": "Webhook Catálogo",
+      "webhookId": "enviar-catalogo-webhook"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "workspace_id",
+              "value": "={{ $json.body.workspace_id }}",
+              "type": "string"
+            },
+            {
+              "id": "2",
+              "name": "telefone",
+              "value": "={{ $json.body.telefone }}",
+              "type": "string"
+            },
+            {
+              "id": "3",
+              "name": "instancia",
+              "value": "={{ $json.body.instancia }}",
+              "type": "string"
+            },
+            {
+              "id": "4",
+              "name": "server_url",
+              "value": "={{ $json.body.server_url }}",
+              "type": "string"
+            },
+            {
+              "id": "5",
+              "name": "apikey",
+              "value": "={{ $json.body.apikey }}",
+              "type": "string"
+            },
+            {
+              "id": "6",
+              "name": "categoria",
+              "value": "={{ $json.body.categoria || 'planos' }}",
+              "type": "string"
+            },
+            {
+              "id": "7",
+              "name": "limite",
+              "value": "={{ $json.body.limite || 5 }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [140, 0],
+      "id": "set-params",
+      "name": "Extrair Parâmetros"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "workspace_assets",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "workspace_id",
+              "keyValue": "={{ $json.workspace_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [380, 0],
+      "id": "buscar-assets",
+      "name": "Buscar Assets do Catálogo",
+      "credentials": {
+        "supabaseApi": {
+          "id": "36cYNGuho8l040lJ",
+          "name": "Synapse"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const assets = $input.all();\nconst params = $('Extrair Parâmetros').first().json;\nconst limite = params.limite || 5;\n\n// Filtrar por file_type = image e limitar\nconst images = assets\n  .filter(item => item.json.file_type === 'image')\n  .slice(0, limite)\n  .map(item => ({\n    title: item.json.title,\n    description: item.json.description || '',\n    url: item.json.file_url,\n    telefone: params.telefone,\n    instancia: params.instancia,\n    server_url: params.server_url,\n    apikey: params.apikey\n  }));\n\nif (images.length === 0) {\n  return [{\n    json: {\n      erro: true,\n      mensagem: 'Nenhuma imagem encontrada no catálogo',\n      telefone: params.telefone,\n      instancia: params.instancia,\n      server_url: params.server_url,\n      apikey: params.apikey\n    }\n  }];\n}\n\nreturn images.map(img => ({ json: img }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [620, 0],
+      "id": "preparar-imagens",
+      "name": "Preparar Imagens"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "1",
+              "leftValue": "={{ $json.erro }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [860, 0],
+      "id": "verificar-erro",
+      "name": "Tem Imagens?"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.server_url }}/message/sendMedia/{{ $json.instancia }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $json.apikey }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{ $json.telefone }}\",\n  \"mediatype\": \"image\",\n  \"media\": \"{{ $json.url }}\",\n  \"caption\": \"📦 {{ $json.title }}\\n\\n{{ $json.description }}\"\n}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 2000
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1100, -100],
+      "id": "enviar-imagem",
+      "name": "Enviar Imagem WhatsApp"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.server_url }}/message/sendText/{{ $json.instancia }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "={{ $json.apikey }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{ $json.telefone }}\",\n  \"text\": \"Desculpe, ainda não tenho imagens cadastradas no catálogo. Posso te ajudar de outra forma? 😊\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1100, 100],
+      "id": "enviar-erro",
+      "name": "Enviar Mensagem Sem Catálogo"
+    },
+    {
+      "parameters": {
+        "jsCode": "const resultados = $input.all();\n\nreturn [{\n  json: {\n    sucesso: true,\n    imagens_enviadas: resultados.length,\n    mensagem: `${resultados.length} imagem(ns) enviada(s) com sucesso!`\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1340, -100],
+      "id": "resposta-sucesso",
+      "name": "Resposta Sucesso"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1580, 0],
+      "id": "responder-webhook",
+      "name": "Responder Webhook"
+    }
+  ],
+  "connections": {
+    "Webhook Catálogo": {
+      "main": [
+        [
+          {
+            "node": "Extrair Parâmetros",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extrair Parâmetros": {
+      "main": [
+        [
+          {
+            "node": "Buscar Assets do Catálogo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Assets do Catálogo": {
+      "main": [
+        [
+          {
+            "node": "Preparar Imagens",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Imagens": {
+      "main": [
+        [
+          {
+            "node": "Tem Imagens?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tem Imagens?": {
+      "main": [
+        [
+          {
+            "node": "Enviar Mensagem Sem Catálogo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Enviar Imagem WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Imagem WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Resposta Sucesso",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resposta Sucesso": {
+      "main": [
+        [
+          {
+            "node": "Responder Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Mensagem Sem Catálogo": {
+      "main": [
+        [
+          {
+            "node": "Responder Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": "68f027398f9e5e58fc709533816859718778176c42991d45f89e26a1e44ad6b9"
+  }
+}

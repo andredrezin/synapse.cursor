@@ -74,7 +74,8 @@
     "aiAnalytics": "Analytics",
     "subscription": "Assinatura",
     "pixel": "Pixel de Rastreio",
-    "ranking": "Ranking"
+    "ranking": "Ranking",
+    "catalog": "Catálogo"
   },
   "dashboard": {
     "title": "Dashboard",

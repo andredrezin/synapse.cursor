@@ -1,6 +1,6 @@
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { MetricsErrorBoundary } from "@/components/dashboard/MetricsErrorBoundary";
-import MetricCard from "@/components/dashboard/MetricCard";
+import { StatCard } from "@/components/dashboard/StatCard";
 import ConversionChart from "@/components/dashboard/ConversionChart";
 import LeadsTable from "@/components/dashboard/LeadsTable";
 import TeamPerformance from "@/components/dashboard/TeamPerformance";
@@ -17,7 +17,7 @@ import {
   MessageCircle,
   Clock,
   Target,
-  DollarSign
+  DollarSign,
 } from "lucide-react";
 
 const Dashboard = () => {
@@ -56,60 +56,70 @@ const Dashboard = () => {
       {/* Page Title */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold">
-          {isAdmin ? t('dashboard.title') : t('dashboard.myDashboard')}
+          {isAdmin ? t("dashboard.title") : t("dashboard.myDashboard")}
         </h1>
         <p className="text-muted-foreground">
           {isAdmin
-            ? t('dashboard.overview')
-            : `${t('dashboard.yourSalesData')} • ${currentRole}`
-          }
+            ? t("dashboard.overview")
+            : `${t("dashboard.yourSalesData")} • ${currentRole}`}
         </p>
       </div>
 
       {/* Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
-        <MetricCard
-          title={t('dashboard.conversionRate')}
+        <StatCard
+          title={t("dashboard.conversionRate")}
           value={`${metrics.conversionRate}%`}
-          change={undefined}
+          change={{ value: "4%", trend: "neutral" }} // Placeholder logic
           icon={TrendingUp}
+          variant="glass"
         />
-        <MetricCard
-          title={isAdmin ? t('dashboard.activeLeads') : t('dashboard.myLeads')}
+        <StatCard
+          title={isAdmin ? t("dashboard.activeLeads") : t("dashboard.myLeads")}
           value={metrics.activeLeads.toString()}
-          change={{ value: `+${metrics.newLeadsToday} ${t('common.today').toLowerCase()}`, trend: 'up' }}
+          change={{
+            value: `+${metrics.newLeadsToday} ${t("common.today").toLowerCase()}`,
+            trend: "up",
+          }}
           icon={Users}
-          iconColor="text-chart-blue"
-          iconBg="bg-chart-blue/10"
+          variant="glass"
         />
-        <MetricCard
-          title={isAdmin ? t('dashboard.conversationsToday') : t('dashboard.myConversations')}
+        <StatCard
+          title={
+            isAdmin
+              ? t("dashboard.conversationsToday")
+              : t("dashboard.myConversations")
+          }
           value={metrics.conversationsToday.toString()}
-          change={{ value: `${metrics.conversationsChange > 0 ? '+' : ''}${metrics.conversationsChange}% ${t('dashboard.vsYesterday')}`, trend: metrics.conversationsChange >= 0 ? 'up' : 'down' }}
+          change={{
+            value: `${metrics.conversationsChange > 0 ? "+" : ""}${metrics.conversationsChange}% ${t("dashboard.vsYesterday")}`,
+            trend: metrics.conversationsChange >= 0 ? "up" : "down",
+          }}
           icon={MessageCircle}
-          iconColor="text-chart-purple"
-          iconBg="bg-chart-purple/10"
+          variant="glass"
         />
-        <MetricCard
-          title={t('dashboard.responseTime')}
+        <StatCard
+          title={t("dashboard.responseTime")}
           value={`${metrics.avgResponseTime}min`}
           icon={Clock}
-          iconColor="text-chart-orange"
-          iconBg="bg-chart-orange/10"
+          variant="glass"
         />
-        <MetricCard
-          title={t('dashboard.hotLeads')}
+        <StatCard
+          title={t("dashboard.hotLeads")}
           value={metrics.hotLeads.toString()}
-          subtitle={t('dashboard.readyToClose')}
+          // subtitle={t('dashboard.readyToClose')}
           icon={Target}
+          variant="glass"
         />
-        <MetricCard
-          title={isAdmin ? t('dashboard.salesToday') : t('dashboard.mySales')}
+        <StatCard
+          title={isAdmin ? t("dashboard.salesToday") : t("dashboard.mySales")}
           value={metrics.salesToday.toString()}
-          change={{ value: `${metrics.salesGoalPercent}% ${t('dashboard.ofGoal')}`, trend: 'up' }}
+          change={{
+            value: `${metrics.salesGoalPercent}% ${t("dashboard.ofGoal")}`,
+            trend: "up",
+          }}
           icon={DollarSign}
-          iconColor="text-primary"
-          iconBg="bg-primary/10"
+          variant="glass"
         />
       </div>
 

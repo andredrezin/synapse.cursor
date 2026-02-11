@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
+import { Logo } from "@/components/Logo";
 
 const loginSchema = z.object({
   email: z
@@ -283,10 +284,7 @@ const Auth = () => {
             to="/"
             className="flex items-center justify-center gap-2 hover:opacity-80 transition-opacity"
           >
-            <div className="p-2 bg-primary/20 rounded-lg">
-              <MessageSquare className="w-6 h-6 text-primary" />
-            </div>
-            <span className="text-xl font-bold">SynapseWhats</span>
+            <Logo className="h-12" />
           </Link>
           <div>
             <CardTitle className="text-2xl">Acesso Restrito</CardTitle>
