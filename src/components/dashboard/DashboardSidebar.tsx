@@ -318,7 +318,7 @@ const DashboardSidebar = ({
       )}
     >
       {/* Logo */}
-      <div className="h-20 flex items-center justify-between px-4 border-b border-sidebar-border">
+      <div className="h-48 flex items-center justify-between px-4 border-b border-sidebar-border">
         <Link
           to="/"
           className="flex items-center gap-2"
@@ -329,9 +329,9 @@ const DashboardSidebar = ({
               className={`transition-all duration-300 ${!isOpen && !isMobile ? "w-full flex justify-center" : ""}`}
             >
               {isOpen || isMobile ? (
-                <Logo className="h-14" />
+                <Logo className="h-32" />
               ) : (
-                <Logo className="h-8" showText={false} />
+                <Logo className="h-12" showText={false} />
               )}
             </div>
           </div>
