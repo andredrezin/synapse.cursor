@@ -329,9 +329,9 @@ const DashboardSidebar = ({
               className={`transition-all duration-300 ${!isOpen && !isMobile ? "w-full flex justify-center" : ""}`}
             >
               {isOpen || isMobile ? (
-                <Logo className="h-8" />
+                <Logo className="h-10" />
               ) : (
-                <Logo className="h-8" showText={false} />
+                <Logo className="h-10" showText={false} />
               )}
             </div>
           </div>
