@@ -11,7 +11,7 @@ const Header = () => {
     <header className="fixed top-0 left-0 right-0 z-50 glass border-b border-border/30">
       <div className="container mx-auto px-6 h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2">
-          <Logo className="h-10" />
+          <Logo className="h-12" />
         </Link>
 
         <nav className="hidden md:flex items-center gap-8">
