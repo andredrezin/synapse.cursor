@@ -7,7 +7,7 @@ const Footer = () => {
       <div className="container mx-auto px-6">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-2 mb-4 md:mb-0">
-            <Logo className="h-28" />
+            <Logo className="h-20" />
           </div>
 
           <nav className="flex flex-wrap items-center justify-center gap-6">
