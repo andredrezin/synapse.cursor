@@ -9,9 +9,9 @@ const Header = () => {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 glass border-b border-border/30">
-      <div className="container mx-auto px-6 h-20 flex items-center justify-between">
+      <div className="container mx-auto px-6 h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2">
-          <Logo className="h-14" />
+          <Logo className="h-10" />
         </Link>
 
         <nav className="hidden md:flex items-center gap-8">
@@ -19,25 +19,25 @@ const Header = () => {
             href="#features"
             className="text-muted-foreground hover:text-foreground transition-colors text-sm font-medium"
           >
-            Recursos
+            Benefícios
           </a>
           <a
             href="#metrics"
             className="text-muted-foreground hover:text-foreground transition-colors text-sm font-medium"
           >
-            Métricas
+            Resultados
           </a>
           <a
             href="#ai"
             className="text-muted-foreground hover:text-foreground transition-colors text-sm font-medium"
           >
-            IA
+            Como Funciona
           </a>
           <a
             href="#pricing"
             className="text-muted-foreground hover:text-foreground transition-colors text-sm font-medium"
           >
-            Preços
+            Planos
           </a>
         </nav>
 

@@ -20,6 +20,7 @@ import {
   Loader2,
   AlertCircle,
   ArrowRight,
+  Sparkles,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
@@ -278,22 +279,26 @@ const Auth = () => {
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/10 rounded-full blur-3xl" />
       </div>
 
-      <Card className="w-full max-w-md relative z-10 border-border/50 bg-card/80 backdrop-blur-sm">
+      <Card className="w-full max-w-md relative z-10 border-border/40 bg-card/40 backdrop-blur-md shadow-2xl">
         <CardHeader className="text-center space-y-4">
           <Link
             to="/"
-            className="flex items-center justify-center gap-2 hover:opacity-80 transition-opacity"
+            className="flex items-center justify-center gap-2 hover:opacity-80 transition-opacity mb-2"
           >
-            <Logo className="h-20" />
+            <Logo className="h-16" />
           </Link>
-          <div>
-            <CardTitle className="text-2xl">Acesso Restrito</CardTitle>
-            <CardDescription className="text-accent-foreground font-semibold">
-              🚧 Sistema em Manutenção / Em Construção 🚧
+          <div className="space-y-2">
+            <CardTitle className="text-2xl font-bold tracking-tight">
+              Acesso Restrito
+            </CardTitle>
+            <CardDescription className="text-primary font-medium flex items-center justify-center gap-2">
+              <Sparkles className="w-4 h-4 animate-pulse" />
+              SISTEMA EM EVOLUÇÃO
+              <Sparkles className="w-4 h-4 animate-pulse" />
             </CardDescription>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Este projeto está sendo utilizado como portfólio técnico. O acesso
-              interno está temporariamente restrito ao proprietário.
+            <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
+              Este projeto é um portfólio de engenharia de IA. O acesso interno
+              é exclusivo para demonstração técnica.
             </p>
           </div>
         </CardHeader>
