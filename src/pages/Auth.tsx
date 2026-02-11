@@ -284,7 +284,7 @@ const Auth = () => {
             to="/"
             className="flex items-center justify-center gap-2 hover:opacity-80 transition-opacity"
           >
-            <Logo className="h-12" />
+            <Logo className="h-20" />
           </Link>
           <div>
             <CardTitle className="text-2xl">Acesso Restrito</CardTitle>
