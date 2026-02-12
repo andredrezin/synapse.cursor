@@ -142,7 +142,7 @@ export const useTrackingPixels = () => {
   useEffect(() => {
     if (!workspace?.id) return;
     fetchPixels();
-  }, [workspace?.id]);
+  }, [workspace?.id, fetchPixels]);
 
   return {
     pixels,

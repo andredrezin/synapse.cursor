@@ -20,6 +20,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Logo } from "@/components/Logo";
 import { z } from "zod";
 
 const passwordSchema = z
