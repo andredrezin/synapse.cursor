@@ -29,7 +29,7 @@ SITE_URL=https://synapsecursor.vercel.app
 ### Passo 3: Fazer Deploy (1 min)
 
 ```powershell
-cd synapsewhats1-main
+cd Synapse1-main
 vercel --prod
 ```
 

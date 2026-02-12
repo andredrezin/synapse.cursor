@@ -29,7 +29,7 @@ Como o Supabase não permite copiar, você pode **DIGITAR manualmente** os valor
 Execute este comando na pasta do projeto:
 
 ```powershell
-cd "C:\Users\User\Downloads\Programas e  Drives\Lovable\repositorio GIT hub\synapsewhats-git-andredrezin\synapsewhats1-main"
+cd "C:\Users\User\Downloads\Programas e  Drives\Lovable\repositorio GIT hub\Synapse-git-andredrezin\Synapse1-main"
 .\adicionar-variaveis-interativo.ps1
 ```
 

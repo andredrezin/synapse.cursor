@@ -35,7 +35,7 @@ VITE_SUPABASE_PUBLISHABLE_KEY=sua-chave-aqui
 O Vercel CLI permite digitar os valores manualmente:
 
 ```powershell
-cd synapsewhats1-main
+cd Synapse1-main
 
 # Adicionar VITE_SUPABASE_URL
 vercel env add VITE_SUPABASE_URL production preview development

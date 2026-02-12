@@ -36,7 +36,7 @@ Este guia te ajuda a migrar completamente seu projeto do Lovable para o Vercel.
 
 #### Opção B: Via Script Automatizado
 ```powershell
-cd synapsewhats1-main
+cd Synapse1-main
 .\configurar-vercel-completo.ps1
 ```
 
@@ -67,7 +67,7 @@ Se seu repositório está conectado ao Vercel:
 
 #### Opção B: Deploy Manual
 ```powershell
-cd synapsewhats1-main
+cd Synapse1-main
 vercel --prod
 ```
 

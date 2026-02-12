@@ -11,7 +11,7 @@ Você tem **DOIS repositórios diferentes** agora:
 - **Sincronização**: Mudanças no Lovable são commitadas automaticamente neste repositório
 
 ### 2️⃣ **Repositório Novo no GitHub** (Que acabamos de criar)
-- **Localização**: `https://github.com/andredrezin/synapsewhats_Cursor`
+- **Localização**: `https://github.com/andredrezin/Synapse_Cursor`
 - **Status**: É uma **CÓPIA INDEPENDENTE** do seu projeto
 - **Sincronização**: Você controla manualmente (commit + push)
 
@@ -42,7 +42,7 @@ Depende de onde você trabalhar:
 
 - **Se trabalhar no Lovable**: Salvo no repositório do Lovable (automático)
 - **Se trabalhar localmente**: Salvo apenas localmente até fazer commit
-- **Se fizer push**: Salvo no repositório `synapsewhats_Cursor` no GitHub
+- **Se fizer push**: Salvo no repositório `Synapse_Cursor` no GitHub
 
 ### ❓ "Qual a chance de afetar meu projeto no Lovable?"
 
@@ -73,14 +73,14 @@ Seu projeto no Lovable continua funcionando
 - Você não precisa fazer nada
 - Projeto sempre sincronizado
 
-### Novo Repositório (synapsewhats_Cursor)
+### Novo Repositório (Synapse_Cursor)
 
 ```
 Seu Computador (trabalho local)
     ↓ (você decide quando commitar)
 git commit
     ↓ (você decide quando enviar)
-git push → GitHub (synapsewhats_Cursor)
+git push → GitHub (Synapse_Cursor)
 ```
 
 **Características:**
@@ -195,7 +195,7 @@ git push
               ↕ (separados)
 ┌─────────────────────────────────────────┐
 │   NOVO REPOSITÓRIO                      │
-│   (synapsewhats_Cursor)                 │
+│   (Synapse_Cursor)                 │
 │                                         │
 │   ✅ Cópia independente                 │
 │   ✅ Você controla commits               │

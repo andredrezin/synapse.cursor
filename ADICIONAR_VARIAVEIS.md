@@ -3,7 +3,7 @@
 ## Método 1: Via Dashboard (Mais Fácil) ⭐ RECOMENDADO
 
 1. **Acesse:** https://vercel.com/dashboard
-2. **Selecione o projeto:** synapse.cursor (ou synapsewhats1-main)
+2. **Selecione o projeto:** synapse.cursor (ou Synapse1-main)
 3. **Vá em:** Settings > Environment Variables
 4. **Clique em:** "Add New"
 5. **Adicione as duas variáveis:**
@@ -30,7 +30,7 @@
 Execute na pasta do projeto:
 
 ```powershell
-cd "C:\Users\User\Downloads\Programas e  Drives\Lovable\repositorio GIT hub\synapsewhats-git-andredrezin\synapsewhats1-main"
+cd "C:\Users\User\Downloads\Programas e  Drives\Lovable\repositorio GIT hub\Synapse-git-andredrezin\Synapse1-main"
 
 # Adicionar VITE_SUPABASE_URL
 vercel env add VITE_SUPABASE_URL production preview development
@@ -49,7 +49,7 @@ vercel --prod
 Execute o script PowerShell:
 
 ```powershell
-cd "C:\Users\User\Downloads\Programas e  Drives\Lovable\repositorio GIT hub\synapsewhats-git-andredrezin\synapsewhats1-main"
+cd "C:\Users\User\Downloads\Programas e  Drives\Lovable\repositorio GIT hub\Synapse-git-andredrezin\Synapse1-main"
 .\adicionar-variaveis-vercel.ps1
 ```
 
