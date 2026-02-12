@@ -41,7 +41,7 @@ Este é um sistema completo de gestão de leads e conversas via WhatsApp, com in
 ## 📁 Estrutura de Diretórios
 
 ```
-synapsewhats1-main/
+Synapse1-main/
 ├── src/
 │   ├── components/          # Componentes React reutilizáveis
 │   │   ├── ai-guide/       # Guia IA interativo

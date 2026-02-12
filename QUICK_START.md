@@ -1,4 +1,4 @@
-# 🚀 Quick Start - SynapseWhats
+# 🚀 Quick Start - Synapse
 
 Guia rápido para começar a desenvolver no projeto.
 
@@ -7,8 +7,8 @@ Guia rápido para começar a desenvolver no projeto.
 ### 1. Clone e Instale
 
 ```bash
-git clone https://github.com/andredrezin/synapsewhats_Cursor.git
-cd synapsewhats_Cursor
+git clone https://github.com/andredrezin/Synapse_Cursor.git
+cd Synapse_Cursor
 npm install
 ```
 

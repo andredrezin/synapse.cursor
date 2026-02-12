@@ -17,7 +17,7 @@ export default function TermsOfService() {
           Termos de Serviço
         </h1>
         <p className="text-gray-400 mb-10">
-          Última atualização: 10 de fevereiro de 2026
+          Última atualização: 12 de fevereiro de 2026
         </p>
 
         <div className="space-y-8 text-gray-300 leading-relaxed">
@@ -26,7 +26,7 @@ export default function TermsOfService() {
               1. Aceitação dos Termos
             </h2>
             <p>
-              Ao acessar ou utilizar a plataforma <strong>SynapseWhats</strong>{" "}
+              Ao acessar ou utilizar a plataforma <strong>Synapse</strong>{" "}
               ("Serviço"), operada pela <strong>Synapse Automações</strong>{" "}
               ("nós"), você concorda com estes Termos de Serviço. Se não
               concordar, não utilize o Serviço.
@@ -37,7 +37,7 @@ export default function TermsOfService() {
             <h2 className="text-xl font-semibold text-white mb-3">
               2. Descrição do Serviço
             </h2>
-            <p>O SynapseWhats é uma plataforma SaaS que oferece:</p>
+            <p>O Synapse é uma plataforma SaaS que oferece:</p>
             <ul className="list-disc pl-6 space-y-2 mt-2">
               <li>Automação de vendas e atendimento via WhatsApp com IA.</li>
               <li>
@@ -151,7 +151,7 @@ export default function TermsOfService() {
               7. Propriedade Intelectual
             </h2>
             <p>
-              A plataforma SynapseWhats, incluindo código, design, marca e
+              A plataforma Synapse, incluindo código, design, marca e
               documentação, é propriedade da Synapse Automações. Você mantém a
               propriedade dos seus dados e conteúdos. Ao usar o Serviço, você
               nos concede licença limitada para processar seus dados conforme

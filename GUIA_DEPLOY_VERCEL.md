@@ -1,4 +1,4 @@
-# 🚀 Guia de Deploy no Vercel - SynapseWhats
+# 🚀 Guia de Deploy no Vercel - Synapse
 
 Este guia explica o que falta fazer para fazer o deploy do projeto no Vercel.
 
@@ -55,7 +55,7 @@ npm i -g vercel
 vercel login
 
 # Deploy (na pasta do projeto)
-cd synapsewhats1-main
+cd Synapse1-main
 vercel
 
 # Para produção

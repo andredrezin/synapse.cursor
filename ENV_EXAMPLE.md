@@ -1,4 +1,4 @@
-# 🔐 Variáveis de Ambiente - SynapseWhats
+# 🔐 Variáveis de Ambiente - Synapse
 
 Este documento lista todas as variáveis de ambiente necessárias para o projeto.
 

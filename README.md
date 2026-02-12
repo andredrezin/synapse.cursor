@@ -116,8 +116,8 @@
 1. **Clone o repositório**
 
 ```bash
-git clone https://github.com/andredrezin/synapsewhats_Cursor.git
-cd synapsewhats_Cursor
+git clone https://github.com/andredrezin/Synapse_Cursor.git
+cd Synapse_Cursor
 ```
 
 2. **Instale as dependências**

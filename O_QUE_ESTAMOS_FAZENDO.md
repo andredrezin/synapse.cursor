@@ -68,7 +68,7 @@ Estamos **melhorando o NOSSO PROJETO** que usa Supabase como backend. Especifica
 
 ```
 ┌─────────────────────────────────────────┐
-│   NOSSO PROJETO (SynapseWhats)         │
+│   NOSSO PROJETO (Synapse)         │
 │                                         │
 │   ┌─────────────────────────────────┐ │
 │   │  Frontend (React + TypeScript)   │ │ ← ESTAMOS MELHORANDO AQUI
@@ -101,7 +101,7 @@ Estamos **melhorando o NOSSO PROJETO** que usa Supabase como backend. Especifica
 ### O Que Estamos Editando:
 
 ```
-synapsewhats1-main/
+Synapse1-main/
 ├── src/                          ← ESTAMOS TRABALHANDO AQUI
 │   ├── lib/
 │   │   ├── security.ts          ← ✅ CRIAMOS (sanitização)

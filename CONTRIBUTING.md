@@ -1,6 +1,6 @@
-# 🤝 Guia de Contribuição - SynapseWhats
+# 🤝 Guia de Contribuição - Synapse
 
-Obrigado por considerar contribuir com o SynapseWhats! Este documento fornece diretrizes para contribuir com o projeto.
+Obrigado por considerar contribuir com o Synapse! Este documento fornece diretrizes para contribuir com o projeto.
 
 ## 📋 Índice
 
@@ -30,8 +30,8 @@ Este projeto adere a um código de conduta. Ao participar, você concorda em man
 ```bash
 # Fork o repositório no GitHub
 # Depois clone seu fork
-git clone https://github.com/SEU_USUARIO/synapsewhats_Cursor.git
-cd synapsewhats_Cursor
+git clone https://github.com/SEU_USUARIO/Synapse_Cursor.git
+cd Synapse_Cursor
 ```
 
 ### 2. Configure o Ambiente
@@ -292,7 +292,7 @@ Para dúvidas ou sugestões:
 
 ## 🙏 Agradecimentos
 
-Obrigado por contribuir com o SynapseWhats! Cada contribuição torna o projeto melhor.
+Obrigado por contribuir com o Synapse! Cada contribuição torna o projeto melhor.
 
 ---
 

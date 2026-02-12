@@ -17,7 +17,7 @@ export default function PrivacyPolicy() {
           Política de Privacidade
         </h1>
         <p className="text-gray-400 mb-10">
-          Última atualização: 10 de fevereiro de 2026
+          Última atualização: 12 de fevereiro de 2026
         </p>
 
         <div className="space-y-8 text-gray-300 leading-relaxed">
@@ -27,8 +27,8 @@ export default function PrivacyPolicy() {
             </h2>
             <p>
               A <strong>Synapse Automações</strong> ("nós", "nosso") opera a
-              plataforma SynapseWhats ("Serviço"), uma solução SaaS de automação
-              de vendas e atendimento via WhatsApp com inteligência artificial.
+              plataforma Synapse ("Serviço"), uma solução SaaS de automação de
+              vendas e atendimento via WhatsApp com inteligência artificial.
               Esta Política de Privacidade descreve como coletamos, usamos,
               armazenamos e protegemos suas informações pessoais.
             </p>

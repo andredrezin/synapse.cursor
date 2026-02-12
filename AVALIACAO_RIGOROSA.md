@@ -1,4 +1,4 @@
-# 🔍 Avaliação Rigorosa - SynapseWhats
+# 🔍 Avaliação Rigorosa - Synapse
 
 ## Análise Profissional: Pontos Fortes e Melhorias Críticas
 
