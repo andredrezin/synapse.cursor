@@ -6,17 +6,24 @@ const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
 };
 
 const logStep = (step: string, details?: Record<string, unknown>) => {
-  const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
+  const detailsStr = details ? ` - ${JSON.stringify(details)}` : "";
   console.log(`[SEND-SUBSCRIPTION-EMAIL] ${step}${detailsStr}`);
 };
 
 interface EmailRequest {
   to: string;
-  type: "subscription_created" | "subscription_canceled" | "payment_failed" | "payment_success" | "team_invite" | "create_member";
+  type:
+    | "subscription_created"
+    | "subscription_canceled"
+    | "payment_failed"
+    | "payment_success"
+    | "team_invite"
+    | "create_member";
   password?: string;
   fullName?: string;
   role?: "admin" | "member" | "seller";
@@ -28,7 +35,14 @@ interface EmailRequest {
   inviteLink?: string;
 }
 
-const getEmailContent = (type: EmailRequest["type"], planName?: string, subscriptionEnd?: string, customerName?: string, workspaceName?: string, inviteLink?: string) => {
+const getEmailContent = (
+  type: EmailRequest["type"],
+  planName?: string,
+  subscriptionEnd?: string,
+  customerName?: string,
+  workspaceName?: string,
+  inviteLink?: string,
+) => {
   const name = customerName || "Cliente";
 
   switch (type) {
@@ -186,7 +200,19 @@ serve(async (req) => {
     logStep("Function started");
 
     const body: EmailRequest = await req.json();
-    const { to, type, planName, subscriptionEnd, customerName, workspaceName, inviteLink, password, fullName, role, workspaceId } = body;
+    const {
+      to,
+      type,
+      planName,
+      subscriptionEnd,
+      customerName,
+      workspaceName,
+      inviteLink,
+      password,
+      fullName,
+      role,
+      workspaceId,
+    } = body;
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -197,12 +223,13 @@ serve(async (req) => {
     if (type === "create_member") {
       logStep("Direct Member Creation triggered", { to, workspaceId });
 
-      const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
-        email: to,
-        password: password || Math.random().toString(36).slice(-12),
-        email_confirm: true,
-        user_metadata: { full_name: fullName }
-      });
+      const { data: newUser, error: createError } =
+        await supabaseAdmin.auth.admin.createUser({
+          email: to,
+          password: password || Math.random().toString(36).slice(-12),
+          email_confirm: true,
+          user_metadata: { full_name: fullName },
+        });
 
       if (createError) throw createError;
 
@@ -211,7 +238,7 @@ serve(async (req) => {
         .update({
           full_name: fullName,
           onboarding_completed: true,
-          current_workspace_id: workspaceId
+          current_workspace_id: workspaceId,
         })
         .eq("user_id", newUser.user.id);
 
@@ -220,15 +247,18 @@ serve(async (req) => {
         .insert({
           workspace_id: workspaceId,
           user_id: newUser.user.id,
-          role: role || "seller"
+          role: role || "seller",
         });
 
       if (joinError) throw joinError;
 
-      return new Response(JSON.stringify({ success: true, userId: newUser.user.id }), {
-        status: 200,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
+      return new Response(
+        JSON.stringify({ success: true, userId: newUser.user.id }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        },
+      );
     }
 
     if (!to || !type) {
@@ -239,13 +269,22 @@ serve(async (req) => {
 
     if (!Deno.env.get("RESEND_API_KEY")) {
       logStep("ERROR: RESEND_API_KEY is missing");
-      throw new Error("Configuração de e-mail (RESEND_API_KEY) não encontrada no servidor.");
+      throw new Error(
+        "Configuração de e-mail (RESEND_API_KEY) não encontrada no servidor.",
+      );
     }
 
-    const { subject, html } = getEmailContent(type, planName, subscriptionEnd, customerName, workspaceName, inviteLink);
+    const { subject, html } = getEmailContent(
+      type,
+      planName,
+      subscriptionEnd,
+      customerName,
+      workspaceName,
+      inviteLink,
+    );
 
     const emailResponse = await resend.emails.send({
-      from: "WhatsMetrics <onboarding@resend.dev>",
+      from: "Synapse <onboarding@resend.dev>",
       to: [to],
       subject,
       html,
@@ -253,10 +292,14 @@ serve(async (req) => {
 
     if (emailResponse.error) {
       logStep("Resend API Error", { error: emailResponse.error });
-      throw new Error(emailResponse.error.message || "Erro retornado pela API do Resend");
+      throw new Error(
+        emailResponse.error.message || "Erro retornado pela API do Resend",
+      );
     }
 
-    logStep("Email sent successfully", { emailId: (emailResponse.data as any)?.id });
+    logStep("Email sent successfully", {
+      emailId: (emailResponse.data as any)?.id,
+    });
 
     return new Response(JSON.stringify({ success: true, emailResponse }), {
       status: 200,
@@ -265,12 +308,9 @@ serve(async (req) => {
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     logStep("ERROR", { message: errorMessage });
-    return new Response(
-      JSON.stringify({ error: errorMessage }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
-    );
+    return new Response(JSON.stringify({ error: errorMessage }), {
+      status: 500,
+      headers: { "Content-Type": "application/json", ...corsHeaders },
+    });
   }
 });

@@ -1,36 +1,49 @@
-import DashboardLayout from '@/components/dashboard/DashboardLayout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Code, Copy, Check, ExternalLink, Smartphone, BarChart3 } from 'lucide-react';
-import { useState } from 'react';
-import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/contexts/AuthContext';
+import DashboardLayout from "@/components/dashboard/DashboardLayout";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  Code,
+  Copy,
+  Check,
+  ExternalLink,
+  Smartphone,
+  BarChart3,
+} from "lucide-react";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 const PixelGenerator = () => {
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
   const { workspace } = useAuth();
 
-  const pixelCode = `<!-- WhatsMetrics Pixel -->
+  const pixelCode = `<!-- Synapse Pixel -->
 <script>
   (function(w,h,a,t,s,m,e,t,r,i,c,s){
-    w['WhatsMetricsObject']=s;w[s]=w[s]||function(){
+    w['SynapseObject']=s;w[s]=w[s]||function(){
     (w[s].q=w[s].q||[]).push(arguments)};w[s].l=1*new Date();
     m=h.createElement(a);e=h.getElementsByTagName(a)[0];
     m.async=1;m.src=t;e.parentNode.insertBefore(m,e)
-  })(window,document,'script','https://cdn.whatsmetrics.io/pixel.js','wm');
+  })(window,document,'script','https://cdn.synapseautomacao.com.br/pixel.js','wm');
   
-  wm('init', '${workspace?.id || 'YOUR_WORKSPACE_ID'}');
+  wm('init', '${workspace?.id || "YOUR_WORKSPACE_ID"}');
   wm('track', 'PageView');
 </script>
-<!-- End WhatsMetrics Pixel -->`;
+<!-- End Synapse Pixel -->`;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(pixelCode);
     setCopied(true);
     toast({
-      title: 'Código copiado!',
-      description: 'Cole o código no <head> do seu site.',
+      title: "Código copiado!",
+      description: "Cole o código no <head> do seu site.",
     });
     setTimeout(() => setCopied(false), 2000);
   };
@@ -39,7 +52,9 @@ const PixelGenerator = () => {
     <DashboardLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Pixel de Conversão</h1>
+          <h1 className="text-2xl font-bold tracking-tight">
+            Pixel de Conversão
+          </h1>
           <p className="text-muted-foreground">
             Instale o pixel para rastrear conversões do WhatsApp
           </p>
@@ -54,7 +69,8 @@ const PixelGenerator = () => {
                 Seu Código de Rastreamento
               </CardTitle>
               <CardDescription>
-                Copie e cole este código no {'<head>'} de todas as páginas do seu site
+                Copie e cole este código no {"<head>"} de todas as páginas do
+                seu site
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -92,19 +108,30 @@ const PixelGenerator = () => {
             <CardContent className="space-y-4">
               <ol className="space-y-3 text-sm">
                 <li className="flex gap-3">
-                  <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/20 text-primary text-xs font-bold flex items-center justify-center">1</span>
+                  <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/20 text-primary text-xs font-bold flex items-center justify-center">
+                    1
+                  </span>
                   <span>Copie o código acima</span>
                 </li>
                 <li className="flex gap-3">
-                  <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/20 text-primary text-xs font-bold flex items-center justify-center">2</span>
-                  <span>Cole no {'<head>'} do seu site, antes do fechamento {'</head>'}</span>
+                  <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/20 text-primary text-xs font-bold flex items-center justify-center">
+                    2
+                  </span>
+                  <span>
+                    Cole no {"<head>"} do seu site, antes do fechamento{" "}
+                    {"</head>"}
+                  </span>
                 </li>
                 <li className="flex gap-3">
-                  <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/20 text-primary text-xs font-bold flex items-center justify-center">3</span>
+                  <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/20 text-primary text-xs font-bold flex items-center justify-center">
+                    3
+                  </span>
                   <span>Publique as alterações</span>
                 </li>
                 <li className="flex gap-3">
-                  <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/20 text-primary text-xs font-bold flex items-center justify-center">4</span>
+                  <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/20 text-primary text-xs font-bold flex items-center justify-center">
+                    4
+                  </span>
                   <span>Verifique a instalação abaixo</span>
                 </li>
               </ol>
@@ -122,7 +149,8 @@ const PixelGenerator = () => {
                 <span className="text-sm">Aguardando primeira conexão...</span>
               </div>
               <p className="text-xs text-muted-foreground">
-                Após instalar o pixel, acesse seu site para ativar o rastreamento.
+                Após instalar o pixel, acesse seu site para ativar o
+                rastreamento.
               </p>
             </CardContent>
           </Card>
@@ -138,12 +166,14 @@ const PixelGenerator = () => {
                 </div>
                 <div>
                   <h3 className="font-medium">Rastreamento de Cliques</h3>
-                  <p className="text-xs text-muted-foreground">Identifica cada clique no botão de WhatsApp</p>
+                  <p className="text-xs text-muted-foreground">
+                    Identifica cada clique no botão de WhatsApp
+                  </p>
                 </div>
               </div>
             </CardContent>
           </Card>
-          
+
           <Card className="bg-card/50">
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
@@ -152,12 +182,14 @@ const PixelGenerator = () => {
                 </div>
                 <div>
                   <h3 className="font-medium">Atribuição de Origem</h3>
-                  <p className="text-xs text-muted-foreground">Sabe de qual campanha veio cada lead</p>
+                  <p className="text-xs text-muted-foreground">
+                    Sabe de qual campanha veio cada lead
+                  </p>
                 </div>
               </div>
             </CardContent>
           </Card>
-          
+
           <Card className="bg-card/50">
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
@@ -166,7 +198,9 @@ const PixelGenerator = () => {
                 </div>
                 <div>
                   <h3 className="font-medium">UTM Tracking</h3>
-                  <p className="text-xs text-muted-foreground">Captura automaticamente parâmetros UTM</p>
+                  <p className="text-xs text-muted-foreground">
+                    Captura automaticamente parâmetros UTM
+                  </p>
                 </div>
               </div>
             </CardContent>

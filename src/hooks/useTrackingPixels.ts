@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
-import type { Database } from '@/integrations/supabase/types';
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import type { Database } from "@/integrations/supabase/types";
 
-type TrackingPixel = Database['public']['Tables']['tracking_pixels']['Row'];
-type TrackingPixelInsert = Database['public']['Tables']['tracking_pixels']['Insert'];
+type TrackingPixel = Database["public"]["Tables"]["tracking_pixels"]["Row"];
+type TrackingPixelInsert =
+  Database["public"]["Tables"]["tracking_pixels"]["Insert"];
 
 export const useTrackingPixels = () => {
   const { workspace } = useAuth();
@@ -21,13 +22,13 @@ export const useTrackingPixels = () => {
     setError(null);
 
     const { data, error: fetchError } = await supabase
-      .from('tracking_pixels')
-      .select('*')
-      .eq('workspace_id', workspace.id)
-      .order('created_at', { ascending: false });
+      .from("tracking_pixels")
+      .select("*")
+      .eq("workspace_id", workspace.id)
+      .order("created_at", { ascending: false });
 
     if (fetchError) {
-      console.error('Error fetching pixels:', fetchError);
+      console.error("Error fetching pixels:", fetchError);
       setError(fetchError.message);
     } else {
       setPixels(data || []);
@@ -38,11 +39,11 @@ export const useTrackingPixels = () => {
 
   const createPixel = async (name: string, domain?: string) => {
     if (!workspace?.id) {
-      return { error: new Error('No workspace selected') };
+      return { error: new Error("No workspace selected") };
     }
 
     const { data, error } = await supabase
-      .from('tracking_pixels')
+      .from("tracking_pixels")
       .insert({
         workspace_id: workspace.id,
         name,
@@ -53,15 +54,15 @@ export const useTrackingPixels = () => {
 
     if (error) {
       toast({
-        variant: 'destructive',
-        title: 'Erro ao criar pixel',
+        variant: "destructive",
+        title: "Erro ao criar pixel",
         description: error.message,
       });
       return { error };
     }
 
     toast({
-      title: 'Pixel criado!',
+      title: "Pixel criado!",
       description: `O pixel "${name}" foi criado com sucesso.`,
     });
 
@@ -71,23 +72,23 @@ export const useTrackingPixels = () => {
 
   const updatePixel = async (id: string, updates: Partial<TrackingPixel>) => {
     const { data, error } = await supabase
-      .from('tracking_pixels')
+      .from("tracking_pixels")
       .update(updates)
-      .eq('id', id)
+      .eq("id", id)
       .select()
       .single();
 
     if (error) {
       toast({
-        variant: 'destructive',
-        title: 'Erro ao atualizar pixel',
+        variant: "destructive",
+        title: "Erro ao atualizar pixel",
         description: error.message,
       });
       return { error };
     }
 
     toast({
-      title: 'Pixel atualizado!',
+      title: "Pixel atualizado!",
     });
 
     await fetchPixels();
@@ -96,21 +97,21 @@ export const useTrackingPixels = () => {
 
   const deletePixel = async (id: string) => {
     const { error } = await supabase
-      .from('tracking_pixels')
+      .from("tracking_pixels")
       .delete()
-      .eq('id', id);
+      .eq("id", id);
 
     if (error) {
       toast({
-        variant: 'destructive',
-        title: 'Erro ao deletar pixel',
+        variant: "destructive",
+        title: "Erro ao deletar pixel",
         description: error.message,
       });
       return { error };
     }
 
     toast({
-      title: 'Pixel removido!',
+      title: "Pixel removido!",
     });
 
     await fetchPixels();
@@ -123,10 +124,10 @@ export const useTrackingPixels = () => {
 
   const generatePixelCode = (pixelId: string) => {
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    return `<!-- WhatsMetrics Pixel -->
+    return `<!-- Synapse Pixel -->
 <script>
   (function(w,d,s,p){
-    w['WhatsMetricsPixel']=p;
+    w['SynapsePixel']=p;
     w[p]=w[p]||function(){(w[p].q=w[p].q||[]).push(arguments)};
     var f=d.getElementsByTagName(s)[0],j=d.createElement(s);
     j.async=true;j.src='${supabaseUrl}/functions/v1/track-pixel?pid=${pixelId}';
@@ -135,7 +136,7 @@ export const useTrackingPixels = () => {
   
   wm('track', 'PageView');
 </script>
-<!-- End WhatsMetrics Pixel -->`;
+<!-- End Synapse Pixel -->`;
   };
 
   useEffect(() => {

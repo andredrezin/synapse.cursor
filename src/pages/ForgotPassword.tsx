@@ -1,32 +1,49 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { MessageSquare, Mail, Loader2, AlertCircle, ArrowLeft, CheckCircle } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { z } from 'zod';
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  MessageSquare,
+  Mail,
+  Loader2,
+  AlertCircle,
+  ArrowLeft,
+  CheckCircle,
+} from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { z } from "zod";
 
 const emailSchema = z.object({
-  email: z.string().trim().email('Email inválido').max(255, 'Email muito longo'),
+  email: z
+    .string()
+    .trim()
+    .email("Email inválido")
+    .max(255, "Email muito longo"),
 });
 
 const ForgotPassword = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [emailSent, setEmailSent] = useState(false);
-  const [sentToEmail, setSentToEmail] = useState('');
+  const [sentToEmail, setSentToEmail] = useState("");
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setError('');
+    setError("");
     setIsLoading(true);
 
     const formData = new FormData(e.currentTarget);
-    const email = formData.get('email') as string;
+    const email = formData.get("email") as string;
 
     const result = emailSchema.safeParse({ email });
     if (!result.success) {
@@ -41,8 +58,8 @@ const ForgotPassword = () => {
 
     if (error) {
       toast({
-        variant: 'destructive',
-        title: 'Erro ao enviar email',
+        variant: "destructive",
+        title: "Erro ao enviar email",
         description: error.message,
       });
     } else {
@@ -71,14 +88,19 @@ const ForgotPassword = () => {
               <CardDescription className="mt-2">
                 Enviamos instruções para redefinir sua senha para:
                 <br />
-                <span className="font-medium text-foreground">{sentToEmail}</span>
+                <span className="font-medium text-foreground">
+                  {sentToEmail}
+                </span>
               </CardDescription>
             </div>
           </CardHeader>
 
           <CardContent className="space-y-4">
             <div className="bg-secondary/50 p-4 rounded-lg text-sm text-muted-foreground">
-              <p>O link de redefinição de senha expira em 1 hora. Se você não receber o email, verifique sua pasta de spam.</p>
+              <p>
+                O link de redefinição de senha expira em 1 hora. Se você não
+                receber o email, verifique sua pasta de spam.
+              </p>
             </div>
 
             <div className="space-y-2">
@@ -88,9 +110,9 @@ const ForgotPassword = () => {
                   Voltar ao login
                 </Link>
               </Button>
-              
-              <Button 
-                variant="ghost" 
+
+              <Button
+                variant="ghost"
                 className="w-full text-muted-foreground"
                 onClick={() => setEmailSent(false)}
               >
@@ -112,11 +134,12 @@ const ForgotPassword = () => {
 
       <Card className="w-full max-w-md relative z-10 border-border/50 bg-card/80 backdrop-blur-sm">
         <CardHeader className="text-center space-y-4">
-          <Link to="/" className="flex items-center justify-center gap-2 hover:opacity-80 transition-opacity">
-            <div className="p-2 bg-primary/20 rounded-lg">
-              <MessageSquare className="w-6 h-6 text-primary" />
-            </div>
-            <span className="text-xl font-bold">WhatsMetrics</span>
+          <Link
+            to="/"
+            className="flex items-center justify-center gap-2 hover:opacity-80 transition-opacity"
+          >
+            <Logo className="h-12" />
+            <span className="text-xl font-bold">Synapse</span>
           </Link>
           <div>
             <CardTitle className="text-2xl">Esqueceu sua senha?</CardTitle>
@@ -158,13 +181,16 @@ const ForgotPassword = () => {
                   Enviando...
                 </>
               ) : (
-                'Enviar link de recuperação'
+                "Enviar link de recuperação"
               )}
             </Button>
           </form>
 
           <div className="mt-6 text-center">
-            <Link to="/auth" className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center justify-center gap-1">
+            <Link
+              to="/auth"
+              className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center justify-center gap-1"
+            >
               <ArrowLeft className="w-4 h-4" />
               Voltar ao login
             </Link>

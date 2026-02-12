@@ -1,21 +1,39 @@
-import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { MessageSquare, Lock, Loader2, AlertCircle, CheckCircle, ArrowRight } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { z } from 'zod';
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  MessageSquare,
+  Lock,
+  Loader2,
+  AlertCircle,
+  CheckCircle,
+  ArrowRight,
+} from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { z } from "zod";
 
-const passwordSchema = z.object({
-  password: z.string().min(6, 'Senha deve ter no mínimo 6 caracteres').max(72, 'Senha muito longa'),
-  confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: 'As senhas não coincidem',
-  path: ['confirmPassword'],
-});
+const passwordSchema = z
+  .object({
+    password: z
+      .string()
+      .min(6, "Senha deve ter no mínimo 6 caracteres")
+      .max(72, "Senha muito longa"),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "As senhas não coincidem",
+    path: ["confirmPassword"],
+  });
 
 const ResetPassword = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -28,13 +46,17 @@ const ResetPassword = () => {
   useEffect(() => {
     // Check if we have a valid recovery session
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       setIsValidSession(!!session);
     };
 
     // Listen for auth events (recovery link will trigger this)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'PASSWORD_RECOVERY') {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === "PASSWORD_RECOVERY") {
         setIsValidSession(true);
       }
     });
@@ -51,8 +73,8 @@ const ResetPassword = () => {
 
     const formData = new FormData(e.currentTarget);
     const data = {
-      password: formData.get('password') as string,
-      confirmPassword: formData.get('confirmPassword') as string,
+      password: formData.get("password") as string,
+      confirmPassword: formData.get("confirmPassword") as string,
     };
 
     const result = passwordSchema.safeParse(data);
@@ -74,15 +96,15 @@ const ResetPassword = () => {
 
     if (error) {
       toast({
-        variant: 'destructive',
-        title: 'Erro ao redefinir senha',
+        variant: "destructive",
+        title: "Erro ao redefinir senha",
         description: error.message,
       });
     } else {
       setIsSuccess(true);
       toast({
-        title: 'Senha atualizada!',
-        description: 'Sua senha foi redefinida com sucesso.',
+        title: "Senha atualizada!",
+        description: "Sua senha foi redefinida com sucesso.",
       });
     }
 
@@ -113,18 +135,19 @@ const ResetPassword = () => {
               <AlertCircle className="w-8 h-8 text-destructive" />
             </div>
             <div>
-              <CardTitle className="text-2xl">Link inválido ou expirado</CardTitle>
+              <CardTitle className="text-2xl">
+                Link inválido ou expirado
+              </CardTitle>
               <CardDescription className="mt-2">
-                O link de recuperação de senha não é válido ou já expirou. Por favor, solicite um novo link.
+                O link de recuperação de senha não é válido ou já expirou. Por
+                favor, solicite um novo link.
               </CardDescription>
             </div>
           </CardHeader>
 
           <CardContent>
             <Button asChild className="w-full">
-              <Link to="/forgot-password">
-                Solicitar novo link
-              </Link>
+              <Link to="/forgot-password">Solicitar novo link</Link>
             </Button>
           </CardContent>
         </Card>
@@ -149,7 +172,8 @@ const ResetPassword = () => {
             <div>
               <CardTitle className="text-2xl">Senha atualizada!</CardTitle>
               <CardDescription className="mt-2">
-                Sua senha foi redefinida com sucesso. Você já pode acessar sua conta.
+                Sua senha foi redefinida com sucesso. Você já pode acessar sua
+                conta.
               </CardDescription>
             </div>
           </CardHeader>
@@ -176,17 +200,16 @@ const ResetPassword = () => {
 
       <Card className="w-full max-w-md relative z-10 border-border/50 bg-card/80 backdrop-blur-sm">
         <CardHeader className="text-center space-y-4">
-          <Link to="/" className="flex items-center justify-center gap-2 hover:opacity-80 transition-opacity">
-            <div className="p-2 bg-primary/20 rounded-lg">
-              <MessageSquare className="w-6 h-6 text-primary" />
-            </div>
-            <span className="text-xl font-bold">WhatsMetrics</span>
+          <Link
+            to="/"
+            className="flex items-center justify-center gap-2 hover:opacity-80 transition-opacity"
+          >
+            <Logo className="h-12" />
+            <span className="text-xl font-bold">Synapse</span>
           </Link>
           <div>
             <CardTitle className="text-2xl">Redefinir Senha</CardTitle>
-            <CardDescription>
-              Digite sua nova senha abaixo
-            </CardDescription>
+            <CardDescription>Digite sua nova senha abaixo</CardDescription>
           </div>
         </CardHeader>
 
@@ -244,7 +267,7 @@ const ResetPassword = () => {
                   Atualizando...
                 </>
               ) : (
-                'Redefinir Senha'
+                "Redefinir Senha"
               )}
             </Button>
           </form>
