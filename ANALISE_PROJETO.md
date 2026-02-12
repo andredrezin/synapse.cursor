@@ -2,7 +2,7 @@
 
 ## 🎯 Visão Geral
 
-**Nome do Projeto**: Synapse / WhatsMetrics / LeadFlux  
+**Nome do Projeto**: Synapse / LeadFlux  
 **Tipo**: CRM Inteligente para WhatsApp com IA  
 **Stack Principal**: React + TypeScript + Vite + Supabase + Tailwind CSS
 

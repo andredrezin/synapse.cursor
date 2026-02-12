@@ -20,7 +20,7 @@
 
 ## 🎯 Sobre o Projeto
 
-**SynapseWhats** (também conhecido como **WhatsMetrics** ou **LeadFlux**) é uma plataforma completa de CRM para WhatsApp que utiliza Inteligência Artificial para:
+**Synapse** (também conhecido como **LeadFlux**) é uma plataforma completa de CRM para WhatsApp que utiliza Inteligência Artificial para:
 
 - 🤖 **Automatizar** respostas e qualificação de leads
 - 📊 **Analisar** conversas e sentimentos
